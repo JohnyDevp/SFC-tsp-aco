@@ -5,9 +5,10 @@
 from aco_world import ACOWorld
 
 class ACOSolver:
-    def __init__(self, tau, eta, alpha, beta, rho, n):
+    def __init__(self, world, tau, eta, alpha, beta, rho, n):
         """initialize the solver with parameters for the ACO algorithm
         
+        :param ACOWorld world: initialized world with nodes and edges
         :param float tau: initial pheromone value
         :param float eta: heuristic value
         :param float alpha: alpha parameter
@@ -15,7 +16,7 @@ class ACOSolver:
         :param float rho: evaporation rate
         :param int n: number of ants
         """
-        self.world = ACOWorld()
+        
     
     def __prepare(self):
         pass
