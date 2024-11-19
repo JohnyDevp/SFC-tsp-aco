@@ -1,6 +1,7 @@
 # author: Jan Holan
 # mail: xholan11@stud.fit.vutbr.cz
 # date: 2024-11-18
+# file: aco_solver.py
 
 from aco_world import Ant, Node, Edge, ACOWorld
 

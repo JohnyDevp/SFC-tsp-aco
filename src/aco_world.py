@@ -1,7 +1,7 @@
 # author: Jan Holan
 # mail: xholan11@stud.fit.vutbr.cz
 # date: 2024-11-18
-
+# file: aco_world.py
 import sys
 import numpy as np
 import aco_settings as acos

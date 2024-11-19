@@ -1,3 +1,8 @@
+# author: Jan Holan
+# mail: xholan11@stud.fit.vutbr.cz
+# date: 2024-11-18
+# file: main.py
+
 import aco_world 
 import aco_solver
 import aco_settings as acos    
