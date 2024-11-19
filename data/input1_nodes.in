@@ -1,0 +1,5 @@
+# file of positions of nodes (cities) 
+# number | name (can be null)| posx | posy |  
+1;OSTRAVA;10;30
+2;ZLIN;50;60
+3;BRNO;70;80
