@@ -10,7 +10,7 @@ if __name__ == "__main__":
     world = aco_world.ACOWorld(path_nodes="data/input1_nodes.in", path_edges=None) # "data/input1_edges.in"
     
     # init the solver (100 ants)
-    solver = aco_solver.ACOSolver(world=world, tau=1.0, eta=1.0, alpha=1.0, beta=1.0, rho=0.5, n=100)
+    solver = aco_solver.ACOSolver(_world=world, _tau=1.0, _eta=1.0, _alpha=1.0, _beta=1.0, _rho=0.5, _n=100)
     
     # start the solver with 100 iterations
     solver.solve(100)

@@ -2,10 +2,12 @@
 # mail: xholan11@stud.fit.vutbr.cz
 # date: 2024-11-18
 
-from aco_world import ACOWorld
+from aco_world import Ant, Node, Edge, ACOWorld
 
 class ACOSolver:
-    def __init__(self, world, tau, eta, alpha, beta, rho, n):
+    ants : list[Ant] = []
+    
+    def __init__(self, _world, _tau, _eta, _alpha, _beta, _rho, _n):
         """initialize the solver with parameters for the ACO algorithm
         
         :param ACOWorld world: initialized world with nodes and edges
@@ -16,11 +18,22 @@ class ACOSolver:
         :param float rho: evaporation rate
         :param int n: number of ants
         """
+        self.world = _world
+        self.n = _n
+        self.tau = _tau
+        self.eta = _eta
+        self.alpha = _alpha
+        self.beta = _beta
+        self.rho = _rho
         
-    
     def __prepare(self):
-        pass
-    
+        for i in range(self.n):
+            self.ants.append(Ant())
+
+        for ant in self.ants:
+            # set the starting node for each ant
+            ant.current_node = self.world.get_random_node()
+            
     def __one_step(self):
         pass
     

@@ -3,11 +3,10 @@
 # date: 2024-11-18
 
 import sys
+import numpy as np
 import aco_settings as acos
 import aco_helper as acoh
 
-class Ant:
-    pass
 
 class Node:
     def __init__(self, _id : int, _x : float, _y : float, _name=None):
@@ -26,6 +25,11 @@ class Edge:
     def __str__(self):
         return f"{self.node_first.id} --> {self.node_second.id} |  {self.weight} {self.pheromone}"
         
+class Ant:
+    current_node : Node = None
+    visited_nodes : list[Node] = []
+    current_path : list[Edge] = []
+
 class ACOWorld:
     """represents the world for the ACO algorithm solving TSP problem
     
@@ -56,6 +60,9 @@ class ACOWorld:
             self.__create_edges()
         else: 
             self.__load_edges(path_edges)
+    
+    def get_random_node(self):
+        return np.random.choice(list(self.__nodes.values()))
     
     def __load_nodes(self, path):
         # read the file line by lines, skip comments (lines starting with #)
