@@ -7,7 +7,6 @@ import numpy as np
 import aco_settings as acos
 import aco_helper as acoh
 
-
 class Node:
     def __init__(self, _id : int, _x : float, _y : float, _name=None):
         self.x = _x
@@ -15,6 +14,14 @@ class Node:
         self.id = _id
         self.name = _name
 
+    def __eq__(self, value):
+        """function for checking equality of nodes"""
+        return self.id == value.id
+    
+    def __str__(self):
+        """function for printing out the node"""
+        return f"{self.id} {self.name} {self.x} {self.y}"
+    
 class Edge:
     def __init__(self, _node_first : Node, _node_second : Node, _weight : float, _pheromone : float):
         self.node_first = _node_first
@@ -23,13 +30,13 @@ class Edge:
         self.pheromone = _pheromone
     
     def __str__(self):
-        return f"{self.node_first.id} --> {self.node_second.id} |  {self.weight} {self.pheromone}"
-        
-class Ant:
-    current_node : Node = None
-    visited_nodes : list[Node] = []
-    current_path : list[Edge] = []
-
+        """function for printing out the edge"""
+        return f"{self.node_first.id} --> {self.node_second.id} | {self.weight} {self.pheromone}"
+    
+    def __eq__(self, value):
+        """function for checking equality of edges"""
+        return self.node_first == value.node_first and self.node_second == value.node_second and self.weight == value.weight
+         
 class ACOWorld:
     """represents the world for the ACO algorithm solving TSP problem
     
@@ -41,11 +48,13 @@ class ACOWorld:
     __nodes : dict[int, Node] = {}
     __edges : list[Edge] = []
     
-    def __init__(self, path_nodes, path_edges=None, distance_function=acoh.euclidean_distance):
+    def __init__(self, path_nodes, path_edges=None, _init_pheromone="greedy", distance_function=acoh.euclidean_distance):
         """initialize the world with nodes and edges
         
         :param str path_nodes: path to the file with nodes
-        :param str path_edges: path to the file with edges, if None, the edges will be created
+        :param str path_edges: path to the file with edges, if None, the edges will be created7
+        :param ["greedy"|"uniform"] _init_pheromone: init amount of pheromone on the edges, if greedy, pheromone will be set to 1/(greedy solution), if \
+            uniform, pheromone will be set to 0.01 on each edge
         :param function distance_function: function for computing the distance between two nodes,
             used only if the edges are not provided
         """
@@ -60,11 +69,56 @@ class ACOWorld:
             self.__create_edges()
         else: 
             self.__load_edges(path_edges)
-    
-    def get_random_node(self):
+                    
+        # set the initial pheromone on the edges
+        self.__init_pheromone(_init_pheromone)
+        
+    def get_random_node(self) -> Node:
         return np.random.choice(list(self.__nodes.values()))
     
-    def __load_nodes(self, path):
+    def get_nodes(self) -> dict[int, Node]:
+        return self.__nodes
+    
+    def get_edges(self) -> list[Edge]:
+        return self.__edges
+    
+    def get_adjacent_edges(self, node) -> list[Edge]:
+        """get the edges adjacent to the given node
+        
+        :return: list of edges adjacent to the given node
+        :rtype: list[Edge]
+        """
+        adjacent_edges = []
+        for edge in self.__edges:
+            if (edge.node_first == node or edge.node_second == node):
+                adjacent_edges.append(edge)
+        return adjacent_edges
+    
+    def check_for_graph_completion(self) -> bool:
+        """check whether the graph is complete
+        
+        :rtype: bool
+        :return: True if the graph is complete, False otherwise
+        """
+        node_count = len(self.__nodes)
+        all_nodes = list(self.__nodes.values())
+        path_matrix = np.zeros((node_count, node_count))
+        for edge in self.__edges:
+            path_matrix[all_nodes.index(edge.node_first)][all_nodes.index(edge.node_second)] = 1
+            path_matrix[all_nodes.index(edge.node_second)][all_nodes.index(edge.node_first)] = 1
+    
+        # condition for graph completeness - nodes connected to each other, that results from matrix
+        # adding node_count to the sum is because of the diagonal of the matrix (node connected to itself)
+        complete = (np.sum(path_matrix,axis=(0,1)) + node_count) == node_count ** 2
+        
+        if (acos.VERBOSE and not complete):
+            print("Warning: The graph is not complete!", file=sys.stderr)
+        elif (acos.VERBOSE and complete):
+            print("The graph is complete.", file=sys.stderr)
+        
+        return complete
+                
+    def __load_nodes(self, path) -> None:
         # read the file line by lines, skip comments (lines starting with #)
         try:
             file = open(path, "r")
@@ -86,10 +140,16 @@ class ACOWorld:
             exit(1)
             
         if (acos.VERBOSE):
-            for i in self.__nodes:
-                print(self.__nodes[i].id, self.__nodes[i].name, self.__nodes[i].x, self.__nodes[i].y)
+            self.print_nodes()
     
-    def __load_edges(self, path):
+    def __load_edges(self, path, check_complete_graph=True) -> None:
+        """load the edges from the file
+        
+        :param str path: path to the file with edges
+        :param bool check_complete_graph: default True, if True, the function will check whether the graph is complete \
+            and print warning if not
+        """
+        
         try:
             file = open(path, "r")
             for line in file.readlines(): 
@@ -105,13 +165,12 @@ class ACOWorld:
         except OSError:
             print("Error: Edge file opening error!", file=sys.stderr)
             exit(1)
-        
+            
         # print the edges, if verbose
         if (acos.VERBOSE):
-            for edge in self.__edges:
-                print(edge)
+            self.print_edges()
         
-    def __create_edges(self):
+    def __create_edges(self) -> None:
         # create list of nodes, to be able to iterate normally over them (dict is not good for this...)
         all_nodes = list(self.__nodes.values())
         # calculate the number of nodes
@@ -126,8 +185,30 @@ class ACOWorld:
                     self._distance_function(all_nodes[node_first_idx], all_nodes[node_second_idx]),
                     .0
                 ))    
-        
+            
         # control printout of the edges
         if (acos.VERBOSE):
+            self.print_edges()
+      
+    def __init_pheromone(self, _type) -> None:
+        if (_type == "greedy"):
+            # compute the greedy solution
+            greedy_solution_cost, _, _ = acoh.greedy_solution(self)
+            # set the pheromone on the edges to 1/(greedy solution cost)
             for edge in self.__edges:
-                print(edge)
+                edge.pheromone = 1 / greedy_solution_cost
+                
+        elif (_type == "uniform"):
+            for edge in self.__edges:
+                edge.pheromone = 0.01
+    
+    def print_edges(self) -> None:
+        """print the edges in the world"""
+        for edge in self.__edges:
+            print(edge)
+            
+    def print_nodes(self) -> None:
+        """print the nodes in the world"""
+        for node in self.__nodes:
+            print(self.__nodes[node].id, self.__nodes[node].name, self.__nodes[node].x, self.__nodes[node].y)
+      
