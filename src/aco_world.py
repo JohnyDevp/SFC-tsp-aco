@@ -38,14 +38,14 @@ class Edge:
         return self.node_first == value.node_first and self.node_second == value.node_second and self.weight == value.weight
          
 class ACOWorld:
-    """represents the world for the ACO algorithm solving TSP problem
+    """represents the world for the ACO algorithm
     """
     # dictionary of nodes, there are not necessary for the computation, there are just for visualization,
     # for creating edges between nodes, if the edges are not provided
-    __nodes : dict[int, Node] = {}
+    nodes : dict[int, Node] = {}
     # list of edges between nodes, in case 
     # of non existing edge file, edges will be created between each node
-    __edges : list[Edge] = []
+    edges : list[Edge] = []
     
     def __init__(self, path_nodes, path_edges=None, distance_function=acoh.euclidean_distance):
         """initialize the world with nodes and edges
@@ -68,13 +68,7 @@ class ACOWorld:
             self.__load_edges(path_edges)
         
     def get_random_node(self) -> Node:
-        return np.random.choice(list(self.__nodes.values()))
-
-    def get_nodes(self) -> dict[int, Node]:
-        return self.__nodes
-    
-    def get_edges(self) -> list[Edge]:
-        return self.__edges
+        return np.random.choice(list(self.nodes.values()))
     
     def get_adjacent_edges(self, node) -> list[Edge]:
         """get the edges adjacent to the given node
@@ -83,7 +77,7 @@ class ACOWorld:
         :rtype: list[Edge]
         """
         adjacent_edges = []
-        for edge in self.__edges:
+        for edge in self.edges:
             if (edge.node_first == node or edge.node_second == node):
                 adjacent_edges.append(edge)
         return adjacent_edges
@@ -94,10 +88,10 @@ class ACOWorld:
         :rtype: bool
         :return: True if the graph is complete, False otherwise
         """
-        node_count = len(self.__nodes)
-        all_nodes = list(self.__nodes.values())
+        node_count = len(self.nodes)
+        all_nodes = list(self.nodes.values())
         path_matrix = np.zeros((node_count, node_count))
-        for edge in self.__edges:
+        for edge in self.edges:
             path_matrix[all_nodes.index(edge.node_first)][all_nodes.index(edge.node_second)] = 1
             path_matrix[all_nodes.index(edge.node_second)][all_nodes.index(edge.node_first)] = 1
     
@@ -123,9 +117,9 @@ class ACOWorld:
                     # parse the node info from the line (there have to be four values separated by semicolon)
                     node_id, node_name, node_x, node_y = line.split(";")
                     # create the node and add it to the dictionary
-                    self.__nodes[int(node_id)] = (Node(int(node_id), float(node_x), float(node_y), node_name))
+                    self.nodes[int(node_id)] = (Node(int(node_id), float(node_x), float(node_y), node_name))
                 except:
-                    print("Error: Bad edge file format!", file=sys.stderr)
+                    print("Error: Bad node file format!", file=sys.stderr)
                     exit(2)
                     file.close()
             file.close()
@@ -151,7 +145,7 @@ class ACOWorld:
                     continue
                 try:
                     node_first_id, node_second_id, weight = line.split(";")
-                    self.__edges.append(Edge(self.__nodes[int(node_first_id)],self.__nodes[int(node_second_id)], float(weight), .0))
+                    self.edges.append(Edge(self.nodes[int(node_first_id)],self.nodes[int(node_second_id)], float(weight), .0))
                 except:
                     print("Error: Bad edge file format!", file=sys.stderr)
                     exit(2)
@@ -166,14 +160,14 @@ class ACOWorld:
         
     def __create_edges(self) -> None:
         # create list of nodes, to be able to iterate normally over them (dict is not good for this...)
-        all_nodes = list(self.__nodes.values())
+        all_nodes = list(self.nodes.values())
         # calculate the number of nodes
         node_count = all_nodes.__len__()
         
         # iterate over all nodes and create edge between each pair of nodes
         for node_first_idx in range(0, node_count - 1):
             for node_second_idx in range(node_first_idx + 1, node_count):
-                self.__edges.append(Edge(
+                self.edges.append(Edge(
                     all_nodes[node_first_idx], 
                     all_nodes[node_second_idx], 
                     self._distance_function(all_nodes[node_first_idx], all_nodes[node_second_idx]),
@@ -184,28 +178,38 @@ class ACOWorld:
         if (acos.VERBOSE):
             self.print_edges()
       
-    def init_pheromone(self, tau0) -> None:
+    def init_pheromone(self, tau0) -> float:
+        """initialize the pheromone on the edges
+        
+        :return: the initial pheromone value, usefull in case that the greedy solution is computed, \
+            otherwise the same value as the input tau0 is returned
+        :rtype: float
+        """
+        float_tau0 = .0 
         if (isinstance(tau0,str) and tau0 == "greedy"):
             # compute the greedy solution
             greedy_solution_cost, _, _ = acoh.greedy_solution(self)
             # set the pheromone on the edges to 1/(greedy solution cost)
-            for edge in self.__edges:
+            for edge in self.edges:
                 edge.pheromone = 1 / greedy_solution_cost
-                
+            float_tau0 = 1 / greedy_solution_cost    
         elif (isinstance(tau0,float) or isinstance(tau0,int)):
-            for edge in self.__edges:
+            for edge in self.edges:
                 edge.pheromone = float(tau0)
+            float_tau0 = float(tau0)
         else:
             print("Error: Bad initial phereomone value (tau0 parameter)!", file=sys.stderr)
             exit(3)
+
+        return float_tau0
     
     def print_edges(self) -> None:
         """print the edges in the world"""
-        for edge in self.__edges:
+        for edge in self.edges:
             print(edge)
             
     def print_nodes(self) -> None:
         """print the nodes in the world"""
-        for node in self.__nodes:
-            print(self.__nodes[node].id, self.__nodes[node].name, self.__nodes[node].x, self.__nodes[node].y)
+        for node in self.nodes.values():
+            print(node)
       

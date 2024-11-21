@@ -4,18 +4,19 @@
 # file: aco_helper.py
 
 import numpy as np
-# from aco_world import Node, Edge, ACOWorld
 
 def euclidean_distance(node_first, node_second):
     return np.round(np.sqrt((node_first.x - node_second.x)**2 + (node_first.y - node_second.y)**2), 3)
 
-def greedy_solution(world): #-> tuple[float, list[Edge], list[Node]]:
+def greedy_solution(world):
     """compute the greedy solution for the TSP problem
     
     :param ACOWorld world: initialized world with nodes and edges
+    :return: tuple of the path cost, list of edges and list of nodes
+    :rtype: `tuple[float, list[Edge], list[Node]]`
     """
     # create the solution
-    all_nodes = list(world.get_nodes().values())
+    all_nodes = list(world.nodes.values())
     solution_nodes = [all_nodes[0]]
     solution_edges = []
     path_cost = 0
