@@ -12,10 +12,10 @@ class Ant:
     # private
     __world : ACOWorld = None
     
-    def __init__(self, world : ACOWorld, id : int):
+    def __init__(self, world : ACOWorld, id : int, start_node : Node):
         self.__world = world
         self.id = id
-        self.current_node = None
+        self.current_node = start_node
         self.visited_nodes = []
         self.current_path = []
         
@@ -27,7 +27,9 @@ class Ant:
         """
         # get possible next edges
         possible_edges = self.__world.get_adjacent_edges(self.current_node)
-        
+        # remove the edges that leads to nodes already visited
+        possible_edges = [edge for edge in possible_edges if (edge.node_first not in self.visited_nodes) and (edge.node_second not in self.visited_nodes)]
+    
         # get the probabilities for the next node (for all neighbors of the current node)
         probabilities = self.__get_probabilities(possible_edges, alpha, beta)
         edge_probabilities_intervals = np.cumsum(probabilities)

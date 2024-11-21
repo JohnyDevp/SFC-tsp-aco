@@ -34,15 +34,13 @@ class ACOSolver:
         
     def __prepare(self) -> None:
         # create the ants with world object instance and id
+        # and set the starting node for each ant
         for ant_id in range(self.n):
-            self.ant_colony.append(Ant(self.world,ant_id))
-
-        # set the starting node for each ant
-        for ant in self.ant_colony:
             if self.start_node_id is not None:
-                ant.current_node = self.world.get_nodes()[self.start_node_id]
+                ant_start_node = self.world.get_nodes()[self.start_node_id]
             else:
-                ant.current_node = self.world.get_random_node()
+                ant_start_node = self.world.get_random_node()
+            self.ant_colony.append(Ant(self.world,ant_id,ant_start_node))
             
     def __do_ants_solutions(self) -> None:
         # create the solution for each ant
@@ -58,7 +56,7 @@ class ACOSolver:
         # prepare the world - create the ants, initialize pheromones, etc.
         self.__prepare()
         
-        # for _ in range(num_of_iterations):
-        self.__do_ants_solutions()
+        for _ in range(num_of_iterations):
+            self.__do_ants_solutions()
         
 

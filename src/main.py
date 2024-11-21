@@ -19,7 +19,7 @@ if __name__ == "__main__":
     solver = aco_solver.ACOSolver(_world=world, _alpha=1.0, _beta=1.0, _rho=0.5, _n=5, _tau0="greedy")
     # world.print_edges()
     # start the solver with 100 iterations
-    solver.solve(1)
+    solver.solve(2)
     for ant in solver.ant_colony:
         print(ant.id, "|",ant.current_node,"||",end="")
         for node in ant.visited_nodes:
