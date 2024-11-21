@@ -51,7 +51,6 @@ class ACOSolver:
             ant.do_next_move(self.alpha, self.beta)
             # self.__update_pheromones()
     
-    
     def solve(self, num_of_iterations : int = 0) -> None:
         # prepare the world - create the ants, initialize pheromones, etc.
         self.__prepare()
