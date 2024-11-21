@@ -4,20 +4,24 @@ import numpy as np
 import bisect
 
 class Ant:
+    # public
+    id : int = None
     current_node : Node = None
     visited_nodes : list[Node] = []
     current_path : list[Edge] = []
+    # private
     __world : ACOWorld = None
     
-    def __init__(self, world : ACOWorld):
+    def __init__(self, world : ACOWorld, id : int):
         self.__world = world
+        self.id = id
+        self.current_node = None
+        self.visited_nodes = []
+        self.current_path = []
         
     def do_next_move(self, alpha, beta) -> None:
         """move the ant to the next node
-        
-        :param ACOWorld world: world with nodes and edges
-        :param float tau: initial pheromone value
-        :param float eta: heuristic value
+    
         :param float alpha: alpha parameter
         :param float beta: beta parameter
         """
@@ -27,7 +31,7 @@ class Ant:
         # get the probabilities for the next node (for all neighbors of the current node)
         probabilities = self.__get_probabilities(possible_edges, alpha, beta)
         edge_probabilities_intervals = np.cumsum(probabilities)
-        # randomly choose interval from the probabilities
+        # randomly choose interval according to the probabilities
         random_number = np.random.uniform(0, 1)
         selected_edge_idx = bisect.bisect_left(edge_probabilities_intervals, random_number)
         

@@ -12,12 +12,17 @@ if __name__ == "__main__":
     acos.VERBOSE = False
     
     # init the world
-    world = aco_world.ACOWorld(path_nodes="data/input1_nodes.in", path_edges=None, _init_pheromone="greedy") # "data/input1_edges.in"
+    world = aco_world.ACOWorld(path_nodes="data/input1_nodes.in", path_edges=None) # "data/input1_edges.in"
     # world.print_edges()
     # world.check_for_graph_completion()
     # init the solver (100 ants)
-    # solver = aco_solver.ACOSolver(_world=world, _alpha=1.0, _beta=1.0, _rho=0.5, _n=100)
-    
+    solver = aco_solver.ACOSolver(_world=world, _alpha=1.0, _beta=1.0, _rho=0.5, _n=5, _tau0="greedy")
+    # world.print_edges()
     # start the solver with 100 iterations
-    # solver.solve(100)
+    solver.solve(1)
+    for ant in solver.ant_colony:
+        print(ant.id, "|",ant.current_node,"||",end="")
+        for node in ant.visited_nodes:
+            print(node.id, end=";")
+        print()
     

@@ -39,23 +39,20 @@ class Edge:
          
 class ACOWorld:
     """represents the world for the ACO algorithm solving TSP problem
-    
-    :param dict[Node] _nodes: dictionary of nodes, there are not necessary for the computation, there are just for visualization, \n
-        for creating edges between nodes, if the edges are not provided
-    :param list[Edge] _edges: list of edges between nodes, in case \n
-    of non existing edge file, edges will be created between each node
     """
+    # dictionary of nodes, there are not necessary for the computation, there are just for visualization,
+    # for creating edges between nodes, if the edges are not provided
     __nodes : dict[int, Node] = {}
+    # list of edges between nodes, in case 
+    # of non existing edge file, edges will be created between each node
     __edges : list[Edge] = []
     
-    def __init__(self, path_nodes, path_edges=None, _init_pheromone="greedy", distance_function=acoh.euclidean_distance):
+    def __init__(self, path_nodes, path_edges=None, distance_function=acoh.euclidean_distance):
         """initialize the world with nodes and edges
         
-        :param str path_nodes: path to the file with nodes
-        :param str path_edges: path to the file with edges, if None, the edges will be created7
-        :param ["greedy"|"uniform"] _init_pheromone: init amount of pheromone on the edges, if greedy, pheromone will be set to 1/(greedy solution), if \
-            uniform, pheromone will be set to 0.01 on each edge
-        :param function distance_function: function for computing the distance between two nodes,
+        :param `str` path_nodes: path to the file with nodes
+        :param `str` path_edges: path to the file with edges, if None, the edges will be created
+        :param `function` distance_function: function for computing the distance between two nodes,
             used only if the edges are not provided
         """
         # setup distance function (even if none)
@@ -69,13 +66,10 @@ class ACOWorld:
             self.__create_edges()
         else: 
             self.__load_edges(path_edges)
-                    
-        # set the initial pheromone on the edges
-        self.__init_pheromone(_init_pheromone)
         
     def get_random_node(self) -> Node:
         return np.random.choice(list(self.__nodes.values()))
-    
+
     def get_nodes(self) -> dict[int, Node]:
         return self.__nodes
     
@@ -190,17 +184,20 @@ class ACOWorld:
         if (acos.VERBOSE):
             self.print_edges()
       
-    def __init_pheromone(self, _type) -> None:
-        if (_type == "greedy"):
+    def init_pheromone(self, tau0) -> None:
+        if (isinstance(tau0,str) and tau0 == "greedy"):
             # compute the greedy solution
             greedy_solution_cost, _, _ = acoh.greedy_solution(self)
             # set the pheromone on the edges to 1/(greedy solution cost)
             for edge in self.__edges:
                 edge.pheromone = 1 / greedy_solution_cost
                 
-        elif (_type == "uniform"):
+        elif (isinstance(tau0,float) or isinstance(tau0,int)):
             for edge in self.__edges:
-                edge.pheromone = 0.01
+                edge.pheromone = float(tau0)
+        else:
+            print("Error: Bad initial phereomone value (tau0 parameter)!", file=sys.stderr)
+            exit(3)
     
     def print_edges(self) -> None:
         """print the edges in the world"""
