@@ -1,14 +1,17 @@
 import sys
 from PyQt5.QtWidgets import (
-    QApplication, QMainWindow, QWidget, QVBoxLayout,
-    QSplitter, QLineEdit, QPushButton, QHBoxLayout, 
-    QFileDialog, QScrollArea,QLabel
+    QMainWindow, QWidget, QVBoxLayout,
+    QLineEdit, QPushButton, QHBoxLayout, 
+    QFileDialog, QScrollArea,QGraphicsView, QGraphicsScene,
+    QGraphicsEllipseItem
 )
-from PyQt5.QtCore import Qt,QDir
-from PyQt5.QtGui import QPixmap
+from PyQt5.QtCore import Qt,QDir,QPointF, QLineF
+from PyQt5.QtGui import QPixmap, QPainter, QPen, QColor
 
 import gui.controller as ac
 import gui.drawingcanvas as gs
+
+from acs.aco_world import Node, Edge
 
 class MainWindow(QMainWindow):
     controller : ac.AntGuiController = None
@@ -16,8 +19,9 @@ class MainWindow(QMainWindow):
     def __init__(self, controller):
         super().__init__()
         self.controller = controller
+        self.nodes_set = False
         
-        self.setWindowTitle("PyQt Layout Example")
+        self.setWindowTitle("ACS GUI")
         self.setGeometry(100, 100, 800, 600)  # Window size
 
         # Create main layout
@@ -43,10 +47,11 @@ class MainWindow(QMainWindow):
             ("Q Value", "Enter Q value (e.g., 1.0)","_Q"),
             ("Exploitation Probability (q0)", "Enter q0 (e.g., 0.5)","q0"),
             ("Alpha Decay", "Enter alpha decay (e.g., 0.1)","_alpha_decay"),
-            ("Start Node ID", "Enter start node ID (optional)","start_node_id")
+            ("Start Node ID", "Enter start node ID (optional)","start_node_id"),
+            ("Number of Iterations", "Enter number of iterations (e.g., 100)","num_iterations")
         ]
         self.inputs = []
-        for i in range(9):  # add 8 textboxes for 8 params for ACO
+        for i in range(10):  # add 8 textboxes for 8 params for ACO
             textbox = QLineEdit(self)
             textbox.setFixedSize(200, 30)
             textbox.setPlaceholderText(f"{self.textboxes_params[i][0]}")
@@ -65,6 +70,7 @@ class MainWindow(QMainWindow):
         self.button3 = button3
         for b in [button1, button2, button3]:
             left_layout.addWidget(b)
+            b.setFixedSize(200, 30)
         
         # add left widget to the layout
         mylayout.addWidget(left_widget)
@@ -73,36 +79,96 @@ class MainWindow(QMainWindow):
         right_widget = QWidget(self)
         right_layout = QVBoxLayout(right_widget)
 
-        # create a QLabel to serve as the canvas
-        self.canvas = QLabel(self)
+        # create GraphicsView and Scene
+        self.view = QGraphicsView(self)
+        self.scene = QGraphicsScene(self)
+        self.view.setScene(self.scene)
         self.canvas_width, self.canvas_height = 2000, 2000  # Large virtual canvas size
-        self.canvas.setFixedSize(self.canvas_width, self.canvas_height)
-        self.canvas.setStyleSheet("background-color: white; border: 1px solid black;")
-
-        # create a QPixmap for drawing
-        self.canvas_pixmap = QPixmap(self.canvas_width, self.canvas_height)
-        self.canvas_pixmap.fill(Qt.white)  # Fill the pixmap with white color
-        self.canvas.setPixmap(self.canvas_pixmap)
+        self.view.setMinimumSize(self.canvas_width, self.canvas_height)
+        self.view.setStyleSheet("background-color: white; border: 1px solid black;")
 
         # wrap the QLabel in a QScrollArea
         self.scroll_area = QScrollArea(self)
-        self.scroll_area.setWidget(self.canvas)
-        self.scroll_area.setWidgetResizable(False)  # Keep the canvas size fixed
+        self.scroll_area.setWidget(self.view)
+        self.scroll_area.setWidgetResizable(True)  # Keep the canvas size fixed
         self.scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
         self.scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
 
         # add the scroll area to the right layout
         right_layout.addWidget(self.scroll_area)
-
+        
+        # add buttons for zooming
+        btn_zoom_in = QPushButton("Zoom In", self)
+        btn_zoom_in.clicked.connect(self.__zoom_in)
+        btn_zoom_out = QPushButton("Zoom Out", self)
+        btn_zoom_out.clicked.connect(self.__zoom_out)
+        right_layout.addWidget(btn_zoom_in)
+        right_layout.addWidget(btn_zoom_out)
+        
+        # initialize the zoom factor
+        self.zoom_factor = 1.0
+        
         # add right widget to the layout
         mylayout.addWidget(right_widget)
+        
+        mylayout.setStretch(0, 0)  # left side (textboxes and buttons)
+        mylayout.setStretch(1, 3)  # right side (canvas)
         
         # add layout to the main widget
         main_widget.setLayout(mylayout)
     
+    def draw_nodes(self, nodes : dict[int, Node]) -> None:
+        print("Draw nodes")
+        
+        # define a pen to draw the nodes with
+        pen = QPen(QColor(255, 0, 0))  # Blue color
+        pen.setWidth(2)  # Set line width
+        pen.setStyle(Qt.SolidLine) 
+        
+        # draw the nodes
+        for node in nodes.values():
+            print(node)
+            self.scene.addEllipse(node.x - 5, node.y - 5, 10, 10, pen, pen.color())
+        
+        self.scene.update()
+    
+    def draw_edges(self, edges : list[Edge]) -> None:
+        print("Draw edges")
+        
+        # define a pen to draw the nodes with
+        pen = QPen(Qt.black)  # Blue color
+        pen.setWidth(1)  # Set line width
+        pen.setStyle(Qt.SolidLine) 
+        # draw the edges
+        for edge in edges:
+            print(edge)
+            
+            self.scene.addLine(
+                QLineF(
+                    QPointF(edge.node_first.x,edge.node_first.y), 
+                    QPointF(edge.node_second.x,edge.node_second.y)
+                ),
+                pen
+            )
+        
+        self.scene.update()
+     
+    def __zoom_in(self):
+        """Zoom in by increasing the zoom factor."""
+        self.zoom_factor *= 1.2  # Increase zoom factor by 20%
+        self.view.resetTransform()
+        self.view.scale(self.zoom_factor, self.zoom_factor)
+        
+    def __zoom_out(self):
+        """Zoom out by decreasing the zoom factor."""
+        self.zoom_factor /= 1.2  # Decrease zoom factor by ~16.7%
+        self.view.resetTransform()
+        self.view.scale(self.zoom_factor, self.zoom_factor)
+       
     def __load_node_file(self):
         print("Load node file")
         file=QFileDialog.getOpenFileName(self, 'Open file', QDir.homePath(), "Input nodes file (*.in)")
+        self.nodes_set = True
         self.controller.setNodeFilePath(file[0])
         
     def __load_edge_file(self):
@@ -110,13 +176,13 @@ class MainWindow(QMainWindow):
         file=QFileDialog.getOpenFileName(self, 'Open file', QDir.homePath(), "Input edges file (*.in)")
         self.controller.setEdgeFilePath(file[0])
     
-    def __obtain_params(self):
+    def __obtain_params(self) -> dict:
         print("Obtain params")
         # obtain the parameters from the textboxes
         current_item = 0
         try:
-            params = []
-            for i in range(9):
+            params = {}
+            for i in range(10):
                 current_item = i
                 ti = self.inputs[i][1].text().strip()
                 if ti == "":
@@ -129,7 +195,7 @@ class MainWindow(QMainWindow):
                     float(ti)
                 
                 self.inputs[current_item][1].setStyleSheet("")    
-                params.append((self.inputs[i][0],ti))          
+                params[self.inputs[i][0]] = ti
         except ValueError:
             print(f"Error: Invalid parameter values - param {self.inputs[current_item][0]}", file=sys.stderr)
             self.inputs[current_item][1].setStyleSheet("border: 2px solid red;")    
@@ -138,16 +204,33 @@ class MainWindow(QMainWindow):
         return params
     
     def __start_acs(self):
-        # obtain the parameters from the textboxes
-        params = self.__obtain_params()
-        if (params is None):
-            return
-        
-        print("Start ACS")
-        # disable buttons for loading files
-        self.button1.setEnabled(False)
-        self.button2.setEnabled(False)
-        # change button text
-        self.button3.setText("STOP ACS")
-        
-        self.controller.startACS()
+        if (self.controller.ACO_RUNNING):
+            print("Stop ACS")
+            self.controller.ACO_RUNNING = False
+            self.button1.setEnabled(True)
+            self.button2.setEnabled(True)
+            self.button3.setText("START ACS")
+        else:
+            # TODO: uncomment this 
+            # check whether node file is already set
+            # if (not self.nodes_set):
+            #     print("Error: Node file not set!", file=sys.stderr)
+            #     self.button1.setStyleSheet("border: 2px solid red;")
+            #     return
+            # else :
+            #     self.button1.setStyleSheet("")
+            self.controller.setNodeFilePath("/home/johnny/Code/MIT/SFC/data/input1_nodes.in")
+            
+            # obtain the parameters from the textboxes
+            params = self.__obtain_params()
+            if (params is None):
+                return
+            
+            print("Start ACS")
+            # disable buttons for loading files
+            self.button1.setEnabled(False)
+            self.button2.setEnabled(False)
+            # change button text
+            self.button3.setText("STOP ACS")
+            
+            self.controller.startACS(params)

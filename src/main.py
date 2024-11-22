@@ -3,7 +3,7 @@
 # date: 2024-11-18
 # file: main.py
 
-import acs.aco_world as aco_world
+import acs.aco_world as acow
 import acs.aco_solver as aco_solver
 import acs.aco_settings as acos
 
@@ -12,7 +12,7 @@ if __name__ == "__main__":
     # acos.VERBOSE = True
     
     # init the world
-    world = aco_world.ACOWorld(path_nodes="data/input1_nodes.in", path_edges=None) # "data/input1_edges.in"
+    world = acow.ACOWorld(path_nodes="data/input1_nodes.in", path_edges=None) # "data/input1_edges.in"
     # world.print_edges()
     # world.check_for_graph_completion()
     # init the solver (100 ants)

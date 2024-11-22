@@ -4,7 +4,7 @@
 # file: main.py
 
 from time import sleep
-import acs.aco_world as aco_world
+import acs.aco_world as acow
 import acs.aco_solver as aco_solver
 import acs.aco_settings as acos    
 
@@ -20,6 +20,8 @@ if __name__ == "__main__":
     controller = AntGuiController()
     # init main window
     window = MainWindow(controller)
+    # tell controller about window
+    controller.setView(window)
     window.show()
 
     app.exec()
