@@ -4,8 +4,8 @@
 # file: aco_world.py
 import sys
 import numpy as np
-import aco_settings as acos
-import aco_helper as acoh
+import acs.aco_settings as acos
+import acs.aco_helper as acoh
 
 class Node:
     def __init__(self, _id : int, _x : float, _y : float, _name=None):

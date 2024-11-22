@@ -1,5 +1,5 @@
-from aco_world import Node, Edge, ACOWorld
-import aco_settings as acoh
+from acs.aco_world import Node, Edge, ACOWorld
+import acs.aco_settings as acoh
 import numpy as np
 import bisect
 

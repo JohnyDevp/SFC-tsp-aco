@@ -3,9 +3,9 @@
 # date: 2024-11-18
 # file: aco_solver.py
 
-from aco_world import Node, Edge, ACOWorld
-from aco_ant import Ant
-import aco_settings as acos
+from acs.aco_world import Node, Edge, ACOWorld
+from acs.aco_ant import Ant
+import acs.aco_settings as acos
 import sys
 
 class ACOSolver:
