@@ -16,7 +16,7 @@ if __name__ == "__main__":
     # init main window
     window = MainWindow(controller)
     # tell controller about window
-    controller.setView(window)
+    controller.setControllersView(window)
     window.show()
 
     app.exec()

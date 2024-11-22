@@ -20,7 +20,7 @@ class AntGuiController:
         self.node_file_path=None
         self.edge_file_path=None
     
-    def setView(self, view):
+    def setControllersView(self, view):
         self.view : mw.MainWindow = view
     
     def setNodeFilePath(self, path):

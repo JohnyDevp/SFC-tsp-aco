@@ -117,8 +117,8 @@ class MainWindow(QMainWindow):
         self.message_box.setReadOnly(True)
         self.message_box.setFixedSize(200, 300)
         right_layout.addWidget(self.message_box)
-        # Label to display slider value
-        self.iteration_count_label = QLabel("Iterace: 0/0", self)
+        # label to display slider value
+        self.iteration_count_label = QLabel("Iteration: 0/0", self)
         self.iteration_count_label.setFont(QFont("Arial", 16, QFont.Bold))
         self.iteration_count_label.setAlignment(Qt.AlignCenter)
         right_layout.addWidget(self.iteration_count_label)
@@ -235,6 +235,13 @@ class MainWindow(QMainWindow):
             
         self.scene.update()
     
+    def log_message(self, message : str) -> None:
+        """log the message to the message box
+        
+        :param str message: message to log
+        """
+        self.message_box.append(message)
+        
     def __get_color_from_value(self, value, min_val, max_val):
         """Map a value from min to max range to a color."""
         # Normalize value between 0 and 1
@@ -254,11 +261,20 @@ class MainWindow(QMainWindow):
     
     def __zoom_in(self):
         """zoom in by increasing the zoom factor."""
-        self.zoom_factor *= 1.2  # Increase zoom factor by 20%
+        self.zoom_factor *= 1.2  # increase zoom factor by 20%
         self.view.resetTransform()
         self.view.scale(self.zoom_factor, self.zoom_factor)
-        print(self.scroll_area.width(), self.scroll_area.height())
+        # resize the view, to be able to still see whole scene
+        self.view.setMinimumSize(int(self.canvas_width * self.zoom_factor), int(self.canvas_height*self.zoom_factor))
     
+    def __zoom_out(self):
+        """Zoom out by decreasing the zoom factor."""
+        self.zoom_factor /= 1.2  # decrease zoom factor by ~16.7%
+        self.view.resetTransform()
+        self.view.scale(self.zoom_factor, self.zoom_factor)
+        # resize the view back
+        self.view.setMinimumSize(int(self.canvas_width * self.zoom_factor), int(self.canvas_height*self.zoom_factor))
+       
     def scroll_to_area(self, top_left_x, top_left_y):
         """move the scrollbar, so in top left corner will be visible point with coordinates top_left_x, top_left_y
         
@@ -270,12 +286,6 @@ class MainWindow(QMainWindow):
         
         print(self.scroll_area.horizontalScrollBar().value(), self.scroll_area.verticalScrollBar().value())
           
-    def __zoom_out(self):
-        """Zoom out by decreasing the zoom factor."""
-        self.zoom_factor /= 1.2  # Decrease zoom factor by ~16.7%
-        self.view.resetTransform()
-        self.view.scale(self.zoom_factor, self.zoom_factor)
-       
     def __load_node_file_btn_handler(self):
         print("Load node file")
         file=QFileDialog.getOpenFileName(self, 'Open file', QDir.homePath(), "Input nodes file (*.in)")
