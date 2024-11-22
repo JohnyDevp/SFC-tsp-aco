@@ -10,8 +10,9 @@ import sys
 
 class ACOSolver:
     ant_colony : list[Ant] = []
+    GUIACTIVE : bool = False
     
-    def __init__(self, _world : ACOWorld, _alpha : float, _beta : float, _rho : float, _n : int, _tau0 : str | float = 0.01, _Q : float = 1, q0 : float = 0.5, _alpha_decay : float = 0.1, start_node_id : int =None):
+    def __init__(self, _world : ACOWorld, _alpha : float, _beta : float, _rho : float, _n : int, _tau0 : str | float = 0.01, _Q : float = 1, _q0 : float = 0.5, _alpha_decay : float = 0.1, _start_node_id : int =None,_gui_controller = None):
         """initialize the solver with parameters for the ACO algorithm - ACS
         
         :param `ACOWorld` world: initialized world with nodes and edges
@@ -33,15 +34,19 @@ class ACOSolver:
         self.beta = _beta
         self.rho = _rho
         self.Q = _Q
-        self.q0 = q0
+        self.q0 = _q0
         self.alpha_decay = _alpha_decay
-        self.start_node_id = start_node_id
+        self.start_node_id = _start_node_id
+        
+        self.gui_controller = _gui_controller
+        self.GUIACTIVE = False if self.gui_controller is None else True
         
         self.tau0 = self.world.init_pheromone(_tau0)
         
     def __create_ants(self) -> None:
         # create the ants with world object instance and id
         # and set the starting node for each ant
+        self.ant_colony = []
         for ant_id in range(self.n):
             # choose the start node according to the preferences
             if self.start_node_id is not None:
@@ -80,30 +85,42 @@ class ACOSolver:
         # return the list of ants according to the total tour length
         return sorted(self.ant_colony, key=lambda ant: ant.tour_cost)
         
-    def __global_update_pheromones(self, ant : Ant) -> None:
+    def __global_update_pheromones(self, ant : Ant) -> tuple[float,float]:
         """update the pheromone on trails
         
         :param `Ant` ant: the best ant that found the shortest path
         """
+        current_min_pheromone = float('inf')
+        current_max_pheromone = float('-inf')
         for edge in self.world.edges:
             ant_contribution = 0
             if edge in ant.tour:
                 ant_contribution = self.Q / ant.tour_cost
             # update the pheromone on the edge
             edge.pheromone = (1 - self.alpha_decay) * edge.pheromone + ant_contribution
-    
-    def __local_update_pheromones(self, ant : Ant) -> None:
-        """update the pheromone on trails
+            current_max_pheromone = max(current_max_pheromone, edge.pheromone)
+            current_min_pheromone = min(current_min_pheromone, edge.pheromone)
         
-        :param `Ant` ant: the best ant that found the shortest path
+        return (current_min_pheromone, current_max_pheromone)
+            
+    def __local_update_pheromones(self, ant : Ant) -> None:
+        """update the pheromone on last added edge in the tour of ant
+        
+        :param `Ant` ant: ant
         """
-        # diff tau is set to t0 (initial pheromone value)
-        # it can also be the max of pheromones of adjacent edges to the last node
+        # delta tau is set to t0 (initial pheromone value)
         # or it can be just 0
-        ant.tour[-1].pheromone = (1 - self.rho) * ant.tour[-1].pheromone + self.rho * self.tau0    
+        ant.tour[-1].pheromone = max(
+            (1 - self.rho) * ant.tour[-1].pheromone + self.rho * self.tau0,
+            self.tau0
+        )
+        
     
     def solve(self, num_of_iterations : int = 0) -> None:
-        # prepare the world - create the ants, initialize pheromones, etc.
+        """solve the problem with the ACO algorithm - ACS and defined number of steps
+            this methods handles whole process
+        :param `int` num_of_iterations: number of iterations
+        """
         self.__create_ants()
             
         for _ in range(num_of_iterations):
@@ -111,6 +128,32 @@ class ACOSolver:
             sorted_ants = self.__do_ants_solutions()
             if acos.VERBOSE:
                 print('Best ant:', sorted_ants[0].tour_cost, file=sys.stderr)
-                
+                            
             self.__global_update_pheromones(sorted_ants[0])
+    
+    def prepare_for_one_step_solving(self) -> None:
+        """prepare the solver for solving ACS by externally calling solve_one_step method
+            in this case it just creates ants
+        """
+        self.__create_ants()
         
+    def solve_one_step(self) -> None:
+        """do one step in solving the problem with the ACO algorithm - ACS 
+        this method is meant to be called externally in a loop
+        necessary to call `prepare_for_one_step_solving()` method before calling this method
+        
+        especialy for GUI purposes
+        """
+        self.__reset_ants()
+        sorted_ants = self.__do_ants_solutions()
+        if acos.VERBOSE:
+            print('Best ant:', sorted_ants[0].tour_cost, file=sys.stderr)
+                        
+        min_pheromone, max_pheromone = self.__global_update_pheromones(sorted_ants[0])
+        if (self.GUIACTIVE):
+            self.gui_controller.notify_from_aco_solver(
+                type=acos.ACS2GUIMessage.GLOBAL_PHEROMONE_UPDATE_DONE,
+                best_tour=sorted_ants[0].tour,
+                min_pheromone=min_pheromone,
+                max_pheromone=max_pheromone
+            )

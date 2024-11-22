@@ -9,18 +9,18 @@ import acs.aco_settings as acos
 
 if __name__ == "__main__":
     # set verbose for all modules - debug mode
-    # acos.VERBOSE = True
+    acos.VERBOSE = True
     
     # init the world
-    world = acow.ACOWorld(path_nodes="data/input1_nodes.in", path_edges=None) # "data/input1_edges.in"
+    world = acow.ACOWorld(path_nodes="data/input2_nodes.in", path_edges=None) # "data/input1_edges.in"
     # world.print_edges()
     # world.check_for_graph_completion()
     # init the solver (100 ants)
-    solver = aco_solver.ACOSolver(_world=world, _alpha=1.0, _beta=1.0, _rho=0.5, _n=5, _tau0="greedy", start_node_id=1)
+    solver = aco_solver.ACOSolver(_world=world, _alpha=1.0, _beta=1.0, _rho=0.5, _n=10, _tau0="greedy", _Q=1, _q0=0.5, _alpha_decay=0.1, _start_node_id=None)
     world.print_edges()
     # start the solver 
     acos.VERBOSE = True
-    solver.solve(10)
+    solver.solve(5)
     
     
     

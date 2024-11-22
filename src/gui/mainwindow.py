@@ -1,15 +1,15 @@
 import sys
+import time
 from PyQt5.QtWidgets import (
     QMainWindow, QWidget, QVBoxLayout,
     QLineEdit, QPushButton, QHBoxLayout, 
     QFileDialog, QScrollArea,QGraphicsView, QGraphicsScene,
-    QGraphicsEllipseItem
+    QGraphicsEllipseItem, QGraphicsLineItem
 )
 from PyQt5.QtCore import Qt,QDir,QPointF, QLineF
-from PyQt5.QtGui import QPixmap, QPainter, QPen, QColor
+from PyQt5.QtGui import QPixmap, QPainter, QPen, QColor, QLinearGradient
 
 import gui.controller as ac
-import gui.drawingcanvas as gs
 
 from acs.aco_world import Node, Edge
 
@@ -45,9 +45,9 @@ class MainWindow(QMainWindow):
             ("Number of Ants", "Enter number of ants (e.g., 50)","_n"),
             ("Initial Pheromone (tau0)", "Enter initial pheromone (e.g., 0.01)","_tau0"),
             ("Q Value", "Enter Q value (e.g., 1.0)","_Q"),
-            ("Exploitation Probability (q0)", "Enter q0 (e.g., 0.5)","q0"),
+            ("Exploitation Probability (q0)", "Enter q0 (e.g., 0.5)","_q0"),
             ("Alpha Decay", "Enter alpha decay (e.g., 0.1)","_alpha_decay"),
-            ("Start Node ID", "Enter start node ID (optional)","start_node_id"),
+            ("Start Node ID", "Enter start node ID (optional)","_start_node_id"),
             ("Number of Iterations", "Enter number of iterations (e.g., 100)","num_iterations")
         ]
         self.inputs = []
@@ -121,38 +121,86 @@ class MainWindow(QMainWindow):
         print("Draw nodes")
         
         # define a pen to draw the nodes with
-        pen = QPen(QColor(255, 0, 0))  # Blue color
+        pen = QPen(QColor(0, 0, 0))  # black color
         pen.setWidth(2)  # Set line width
         pen.setStyle(Qt.SolidLine) 
         
         # draw the nodes
         for node in nodes.values():
             print(node)
-            self.scene.addEllipse(node.x - 5, node.y - 5, 10, 10, pen, pen.color())
+            item=self.scene.addEllipse(node.x - 5, node.y - 5, 10, 10, pen, pen.color())
+            item.setZValue(10)
         
         self.scene.update()
     
-    def draw_edges(self, edges : list[Edge]) -> None:
+    def draw_edges(self, edges : list[Edge]):
         print("Draw edges")
         
         # define a pen to draw the nodes with
         pen = QPen(Qt.black)  # Blue color
         pen.setWidth(1)  # Set line width
         pen.setStyle(Qt.SolidLine) 
+        
+        self.edge_ui = []
         # draw the edges
         for edge in edges:
             print(edge)
             
-            self.scene.addLine(
+            lineitem = self.scene.addLine(
                 QLineF(
                     QPointF(edge.node_first.x,edge.node_first.y), 
                     QPointF(edge.node_second.x,edge.node_second.y)
                 ),
                 pen
             )
-        
+            self.edge_ui.append( lineitem)
         self.scene.update()
-     
+    
+    def update_edges(self, edges : list[Edge], best_tour : list[Edge], min_pheromone, max_pheromone) -> None:
+        print("Update edges")
+        
+        # define a pen to draw the nodes with
+        pen = QPen(Qt.black)  # Blue color
+        pen.setWidth(2)  # Set line width
+        pen.setStyle(Qt.SolidLine) 
+        
+        # remove the old edges
+        for edge in self.edge_ui:
+            self.scene.removeItem(edge)
+            
+        # draw the new edges
+        for edge in edges:
+            print(edge)
+            pen.setColor(self.__get_color_from_value(edge.pheromone, min_pheromone, max_pheromone))
+            lineitem = self.scene.addLine(
+                QLineF(
+                    QPointF(edge.node_first.x,edge.node_first.y), 
+                    QPointF(edge.node_second.x,edge.node_second.y)
+                ),
+                pen
+            )
+            self.edge_ui.append(lineitem)
+            
+        self.scene.update()
+        time.sleep(0.5)
+    
+    def __get_color_from_value(self, value, min_val, max_val):
+        """Map a value from min to max range to a color."""
+        # Normalize value between 0 and 1
+        normalized_value = (value - min_val) / (max_val - min_val)
+
+        # Define start and end colors (blue to red)
+        start_color = QColor(0, 0, 100)   # Blue
+        end_color = QColor(255, 0, 255)    # Red
+
+        # Interpolate each color channel
+        r = start_color.red() + (end_color.red() - start_color.red()) * normalized_value
+        g = start_color.green() + (end_color.green() - start_color.green()) * normalized_value
+        b = start_color.blue() + (end_color.blue() - start_color.blue()) * normalized_value
+    
+        # Return the interpolated color
+        return QColor(int(r), int(g), int(b))
+    
     def __zoom_in(self):
         """Zoom in by increasing the zoom factor."""
         self.zoom_factor *= 1.2  # Increase zoom factor by 20%
@@ -219,7 +267,7 @@ class MainWindow(QMainWindow):
             #     return
             # else :
             #     self.button1.setStyleSheet("")
-            self.controller.setNodeFilePath("/home/johnny/Code/MIT/SFC/data/input1_nodes.in")
+            self.controller.setNodeFilePath("/home/johnny/Code/MIT/SFC/data/input2_nodes.in")
             
             # obtain the parameters from the textboxes
             params = self.__obtain_params()
