@@ -337,16 +337,17 @@ class MainWindow(QMainWindow):
                 current_item = i
                 ti = self.inputs[i][1].text().strip()
                 if ti == "":
-                    ti = None
+                    params[self.inputs[i][0]] = None
                 elif self.inputs[i][0] == "_tau0":
-                    if ti != "greedy": float(ti)
+                    if ti != "greedy":
+                        params[self.inputs[i][0]] = float(ti)
                 elif self.inputs[i][0] == "q0":
                     if float(ti) > 1.0 or float(ti) < 0.0: raise ValueError
+                    else: params[self.inputs[i][0]] = float(ti)
                 else:
-                    float(ti)
+                    params[self.inputs[i][0]] = float(ti)
                 
                 self.inputs[current_item][1].setStyleSheet("")    
-                params[self.inputs[i][0]] = ti
         except ValueError:
             print(f"Error: Invalid parameter values - param {self.inputs[current_item][0]}", file=sys.stderr)
             self.inputs[current_item][1].setStyleSheet("border: 2px solid red;")    
@@ -362,8 +363,34 @@ class MainWindow(QMainWindow):
         self.edge_ui = []
         self.zoom_factor = 1
     
-    def set_computation_finised_gui(self, best_tour):
-        self.run_acs_btn.setEnabled(False)     
+    def set_computation_finised_gui(self, best_tour_edges : list[Edge], best_tour_nodes : list[Node]):
+        self.run_acs_btn.setEnabled(False)  
+        
+        self.best_nodes_edges_gui = []
+        # draw edges
+        # define a pen to draw the nodes with
+        pen = QPen(QColor(237, 188, 52))  # Blue color
+        pen.setWidth(2)  # Set line width
+        pen.setStyle(Qt.SolidLine) 
+        for edge in best_tour_edges:
+            item = self.scene.addLine(
+                QLineF(
+                    QPointF(edge.node_first.x,edge.node_first.y), 
+                    QPointF(edge.node_second.x,edge.node_second.y)
+                ),
+                pen
+            )
+            self.best_nodes_edges_gui.append(item)
+            
+        # draw nodes
+        pen.setColor(QColor(40, 201, 54))
+        for node in best_tour_nodes:
+            item=self.scene.addEllipse(node.x - 5, node.y - 5, 10, 10, pen, pen.color())
+            item.setZValue(10)
+            self.best_nodes_edges_gui.append(item)
+            
+        # update the scene
+        self.scene.update()
            
     def __start_acs_btn_handler(self):
         if (self.controller.ACO_STATE == ac.ACOComputationState.ACO_RUNNING):

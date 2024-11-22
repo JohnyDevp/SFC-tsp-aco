@@ -2,6 +2,7 @@ import gui.mainwindow as mw
 from acs.aco_solver import ACOSolver
 from acs.aco_world import ACOWorld
 import acs.aco_settings as acos
+import threading
 
 from PyQt5.QtWidgets import QApplication
 from PyQt5.QtCore import Qt, QTimer, QPointF
@@ -19,6 +20,7 @@ class AntGuiController:
     def __init__(self):
         self.node_file_path=None
         self.edge_file_path=None
+        self.lock = threading.Lock()
     
     def setControllersView(self, view):
         self.view : mw.MainWindow = view
@@ -54,17 +56,27 @@ class AntGuiController:
         solver.prepare_for_one_step_solving()
         
         def one_step_handler():
-            print("one step")
-            self.current_step += 1
-            solver.solve_one_step()
-            self.view.update_iteration_count(self.current_step, num_iterations)
-            if self.current_step >= num_iterations:
-                self.ACO_STATE = ACOComputationState.ACO_DONE
+            # make sure more than one thread isnt increasing the step
+            with self.lock:
+                self.current_step += 1
+                my_step = self.current_step
+            
+            # check for possibilities of step that is represented by the current thread
+            if my_step == num_iterations:
                 self.timer.stop()
+                self.ACO_STATE = ACOComputationState.ACO_DONE
+                solver.solve_one_step()
+                self.view.update_iteration_count(self.current_step, num_iterations)
+                self.view.set_computation_finised_gui(solver.best_tour_edges, solver.best_tour_nodes)
+            elif my_step > num_iterations:
+                return
+            else:
+                solver.solve_one_step()
+                self.view.update_iteration_count(self.current_step, num_iterations)
             
         # start solving
         self.timer = QTimer(self.view)
-        self.timer.timeout.connect(one_step_handler)
+        self.timer.timeout.connect(lambda: one_step_handler())
         self.timer.start(comp_speed*1000)  # 1 second interval
     
     def pauseACO(self) -> None:
@@ -127,7 +139,7 @@ class AntGuiController:
         self.world = world
         self.current_step = 0
         self.ACO_STATE = True
-        num_iterations = params["num_iterations"] if params["num_iterations"]!=None else 10
+        num_iterations = int(params["num_iterations"]) if params["num_iterations"]!=None else 10
         self.__handle_aco_gui(world,solver,num_iterations, comp_speed)
         
     
