@@ -41,6 +41,10 @@ class ACOSolver:
         self.gui_controller = _gui_controller
         self.GUIACTIVE = False if self.gui_controller is None else True
         
+        self.best_tour_nodes = None
+        self.best_tour_edges = None
+        self.best_tour_cost = float('inf')
+        
         self.tau0 = self.world.init_pheromone(_tau0)
         
     def __create_ants(self) -> None:
@@ -114,7 +118,14 @@ class ACOSolver:
             (1 - self.rho) * ant.tour[-1].pheromone + self.rho * self.tau0,
             self.tau0
         )
+    
+    def get_best_tour(self) -> tuple[list[Node], list[Edge], float]:
+        """get the best tour found by the ACO algorithm
         
+        :return: tuple of nodes, edges and cost of the best tour
+        :rtype: tuple[list[Node], list[Edge], float]
+        """
+        return (self.best_tour_nodes, self.best_tour_edges, self.best_tour_cost)
     
     def solve(self, num_of_iterations : int = 0) -> None:
         """solve the problem with the ACO algorithm - ACS and defined number of steps
@@ -128,8 +139,15 @@ class ACOSolver:
             sorted_ants = self.__do_ants_solutions()
             if acos.VERBOSE:
                 print('Best ant:', sorted_ants[0].tour_cost, file=sys.stderr)
-                            
+            
+            # update pheromones for each path, but add pheromone only to those walked by the best ant
             self.__global_update_pheromones(sorted_ants[0])
+            
+            # save the best tour so far
+            if sorted_ants[0].tour_cost < self.best_tour_cost:
+                self.best_tour_nodes = sorted_ants[0].visited_nodes
+                self.best_tour_edges = sorted_ants[0].tour
+                self.best_tour_cost = sorted_ants[0].tour_cost
     
     def prepare_for_one_step_solving(self) -> None:
         """prepare the solver for solving ACS by externally calling solve_one_step method
@@ -150,6 +168,8 @@ class ACOSolver:
             print('Best ant:', sorted_ants[0].tour_cost, file=sys.stderr)
                         
         min_pheromone, max_pheromone = self.__global_update_pheromones(sorted_ants[0])
+
+        # if gui active, notify about current progress
         if (self.GUIACTIVE):
             self.gui_controller.notify_from_aco_solver(
                 type=acos.ACS2GUIMessage.GLOBAL_PHEROMONE_UPDATE_DONE,
@@ -157,3 +177,9 @@ class ACOSolver:
                 min_pheromone=min_pheromone,
                 max_pheromone=max_pheromone
             )
+            
+        # save the best tour so far
+        if sorted_ants[0].tour_cost < self.best_tour_cost:
+            self.best_tour_nodes = sorted_ants[0].visited_nodes
+            self.best_tour_edges = sorted_ants[0].tour
+            self.best_tour_cost = sorted_ants[0].tour_cost
