@@ -91,7 +91,6 @@ class MainWindow(QMainWindow):
         self.scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
         self.scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
 
-        
         # add the scroll area to the right layout
         right_layout.addWidget(self.scroll_area)
 
@@ -114,9 +113,11 @@ class MainWindow(QMainWindow):
     def __obtain_params(self):
         print("Obtain params")
         # obtain the parameters from the textboxes
+        current_item = 0
         try:
             params = []
             for i in range(9):
+                current_item = i
                 ti = self.inputs[i][1].text().strip()
                 if ti == "":
                     ti = None
@@ -126,10 +127,12 @@ class MainWindow(QMainWindow):
                     if float(ti) > 1.0 or float(ti) < 0.0: raise ValueError
                 else:
                     float(ti)
-                    
+                
+                self.inputs[current_item][1].setStyleSheet("")    
                 params.append((self.inputs[i][0],ti))          
         except ValueError:
-            print("Error: Invalid parameter values", file=sys.stderr)
+            print(f"Error: Invalid parameter values - param {self.inputs[current_item][0]}", file=sys.stderr)
+            self.inputs[current_item][1].setStyleSheet("border: 2px solid red;")    
             return None
         
         return params

@@ -18,7 +18,7 @@ if __name__ == "__main__":
     # init the solver (100 ants)
     solver = aco_solver.ACOSolver(_world=world, _alpha=1.0, _beta=1.0, _rho=0.5, _n=5, _tau0="greedy", start_node_id=1)
     world.print_edges()
-    # start the solver with 100 iterations
+    # start the solver 
     acos.VERBOSE = True
     solver.solve(10)
     
