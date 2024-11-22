@@ -3,11 +3,6 @@
 # date: 2024-11-18
 # file: main.py
 
-from time import sleep
-import acs.aco_world as acow
-import acs.aco_solver as aco_solver
-import acs.aco_settings as acos    
-
 from gui.mainwindow import MainWindow
 from gui.controller import AntGuiController
 

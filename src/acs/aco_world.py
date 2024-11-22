@@ -191,7 +191,7 @@ class ACOWorld:
             greedy_solution_cost, _, _ = acoh.greedy_solution(self)
             # set the pheromone on the edges to 1/(greedy solution cost)
             for edge in self.edges:
-                edge.pheromone = 1 / greedy_solution_cost
+                edge.pheromone = 1 / (len(self.nodes)*greedy_solution_cost)
             float_tau0 = 1 / greedy_solution_cost    
         elif (isinstance(tau0,float) or isinstance(tau0,int)):
             for edge in self.edges:

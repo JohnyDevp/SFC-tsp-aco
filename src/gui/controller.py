@@ -76,13 +76,13 @@ class AntGuiController:
         solver = ACOSolver(
             _world=world,
             _gui_controller=self,
-            _alpha=params["_alpha"] if params["_alpha"]!=None else 0.5,
-            _beta=params["_beta"] if params["_beta"]!=None else 0.5,
-            _rho=params["_rho"] if params["_rho"]!=None else 0.5,
+            _alpha=params["_alpha"] if params["_alpha"]!=None else 1.0,
+            _beta=params["_beta"] if params["_beta"]!=None else 2.0,
+            _rho=params["_rho"] if params["_rho"]!=None else 0.1,
             _n=params["_n"] if params["_n"]!=None else 10,
-            _tau0=params["_tau0"] if params["_tau0"]!=None else 0.01,
+            _tau0=params["_tau0"] if params["_tau0"]!=None else "greedy",
             _Q=params["_Q"] if params["_Q"]!=None else 1,
-            _q0=params["_q0"] if params["_q0"]!=None else 0.5,
+            _q0=params["_q0"] if params["_q0"]!=None else 0.9,
             _alpha_decay=params["_alpha_decay"] if params["_alpha_decay"]!=None else 0.1,
             _start_node_id=params["_start_node_id"] if params["_start_node_id"]!=None else None
         )
