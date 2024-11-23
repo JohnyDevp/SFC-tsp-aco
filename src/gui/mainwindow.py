@@ -161,7 +161,7 @@ class MainWindow(QMainWindow):
         # add layout to the main widget
         main_widget.setLayout(mylayout)
     
-    def draw_nodes(self, nodes : dict[int, Node]) -> None:
+    def draw_nodes(self, nodes : dict[int, Node], start_node=None) -> None:
         print("Draw nodes")
         
         # define a pen to draw the nodes with
@@ -185,6 +185,15 @@ class MainWindow(QMainWindow):
         
         self.scene.update()
     
+    def draw_start_node(self, node : Node) -> None:
+        # define a pen to draw the nodes with
+        pen = QPen(QColor(255, 0, 0))  # red color
+        pen.setWidth(2)  # Set line width
+        pen.setStyle(Qt.SolidLine) 
+        item=self.scene.addEllipse(node.x - 5, node.y - 5, 10, 10, pen, pen.color())
+        item.setZValue(20)
+        self.scene.update()
+            
     def draw_edges(self, edges : list[Edge]):
         print("Draw edges")
         

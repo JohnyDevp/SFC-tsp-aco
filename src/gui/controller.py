@@ -159,6 +159,7 @@ class AntGuiController:
         if (not world.check_for_graph_completion()):
             self.view.log_message("Graph is not complete. Using created edges with euclidean distance.", bold=True,warning=True)
             world = ACOWorld(self.node_file_path, None)
+            
         # set up the solver
         solver = ACOSolver(
             _world=world,
@@ -173,6 +174,10 @@ class AntGuiController:
             _alpha_decay=_alpha_decay,
             _start_node_id=_start_node_id,
         )
+        
+        # draw the start node
+        if _start_node_id != None:
+            self.view.draw_start_node(world.nodes[_start_node_id])
         
         self.solver = solver
         self.world = world
