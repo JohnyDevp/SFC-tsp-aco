@@ -76,15 +76,25 @@ class ACOSolver:
         finished_ants = 0 # the number of ants that have finished their path-finding
         while finished_ants < len(self.ant_colony):
             for ant in self.ant_colony:
-                if not ant.can_move(): continue
-                
-                # move the ant to the next node
-                ant.do_next_move_ACS(self.q0, self.alpha, self.beta)
-                # update pheromone locally
-                self.__local_update_pheromones(ant)
-                # if the ant cannot move anymore after the current move, increment the finished_ants
                 if not ant.can_move():
-                    finished_ants += 1
+                    # if the ant cannot move anymore, check if it has returned to the starting position
+                    if ant.ant_has_returned_to_start():
+                        continue
+                    else:
+                        # if the ant has not returned to the starting position, move it to the starting position
+                        ant.do_final_move_to_start()
+                        # update pheromone locally
+                        self.__local_update_pheromones(ant)
+                        finished_ants += 1
+                        continue
+                else:
+                    # move the ant to the next node
+                    ant.do_next_move_ACS(self.q0, self.alpha, self.beta)
+                    # update pheromone locally
+                    self.__local_update_pheromones(ant)
+                    # if the ant cannot move anymore after the current move, increment the finished_ants
+                    if not ant.can_move() and ant.ant_has_returned_to_start():
+                        finished_ants += 1
             
         # return the list of ants according to the total tour length
         return sorted(self.ant_colony, key=lambda ant: ant.tour_cost)

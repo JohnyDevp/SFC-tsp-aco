@@ -4,7 +4,7 @@ from PyQt5.QtWidgets import (
     QMainWindow, QWidget, QVBoxLayout,
     QLineEdit, QPushButton, QHBoxLayout, 
     QFileDialog, QScrollArea,QGraphicsView, QGraphicsScene,
-    QTextEdit, QLabel, QSlider
+    QTextEdit, QLabel, QSlider, QGraphicsTextItem, QGraphicsRectItem
 )
 from PyQt5.QtCore import Qt,QDir,QPointF, QLineF,QCoreApplication
 from PyQt5.QtGui import QPen, QColor,QFont
@@ -173,6 +173,14 @@ class MainWindow(QMainWindow):
         for node in nodes.values():
             print(node)
             item=self.scene.addEllipse(node.x - 5, node.y - 5, 10, 10, pen, pen.color())
+            txt =self.scene.addText(str(node.id), QFont("Arial", 12, weight=1000))
+            txt.setPos(node.x, node.y)
+            txt.setZValue(12)
+            # constatns here are just guessed ... to make the background not so large 
+            backg = QGraphicsRectItem(txt.x(),txt.y()+5,txt.boundingRect().width()-2,txt.boundingRect().height()-8)
+            backg.setBrush(QColor(158, 134, 28))
+            backg.setZValue(11)
+            self.scene.addItem(backg)
             item.setZValue(10)
         
         self.scene.update()
@@ -235,12 +243,21 @@ class MainWindow(QMainWindow):
             
         self.scene.update()
     
-    def log_message(self, message : str) -> None:
+    def log_message(self, message : str, bold=False, warning=False) -> None:
         """log the message to the message box
         
         :param str message: message to log
         """
-        self.message_box.append(message)
+        prefix = ""
+        suffix = ""
+        if warning:
+            prefix += "<font color='red'>"
+            suffix += "</font>"
+        if bold:
+            prefix += "<b>"
+            suffix += "</b>"
+        
+        self.message_box.append(prefix + message + suffix)
         
     def __get_color_from_value(self, value, min_val, max_val):
         """Map a value from min to max range to a color."""
@@ -248,8 +265,8 @@ class MainWindow(QMainWindow):
         normalized_value = (value - min_val) / (max_val - min_val)
 
         # Define start and end colors (blue to red)
-        start_color = QColor(0, 0, 100)   # Blue
-        end_color = QColor(255, 0, 255)    # Red
+        start_color = QColor(23, 230, 212)   # Blue
+        end_color = QColor(28, 21, 230)    # Red
 
         # Interpolate each color channel
         r = start_color.red() + (end_color.red() - start_color.red()) * normalized_value
