@@ -1,5 +1,4 @@
 import sys
-import time
 from PyQt5.QtWidgets import (
     QMainWindow, QWidget, QVBoxLayout,
     QLineEdit, QPushButton, QHBoxLayout, 
@@ -257,6 +256,7 @@ class MainWindow(QMainWindow):
         
         :param str message: message to log
         """
+        
         prefix = ""
         suffix = ""
         if warning:
@@ -328,10 +328,6 @@ class MainWindow(QMainWindow):
         # reset the scene, because we are creating a new world
         self.reset_scene_context()
         
-        # TODO remove this hardcoded path
-        self.controller.setNodeFilePath("/home/johnny/Code/MIT/SFC/data/input2_nodes.in")
-        self.nodes_set = True
-        
         # chceck whether the node file is set
         if not self.nodes_set:
             print("Error: Node file not set!", file=sys.stderr)
@@ -352,6 +348,7 @@ class MainWindow(QMainWindow):
         self.load_node_file_btn.setEnabled(True)
         self.load_edge_file_btn.setEnabled(True)
         self.create_world_btn.setEnabled(True)
+        self.nodes_set=False
     
     def __obtain_params(self) -> dict:
         print("Obtain params")
