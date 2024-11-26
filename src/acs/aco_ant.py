@@ -47,6 +47,25 @@ class Ant:
         possible_edges = self.__get_possible_edges()
         return possible_edges != []
     
+    def ant_has_returned_to_start(self) -> bool:
+        """check if the ant has returned to the starting position
+        
+        :return: True if the ant has returned to the starting position, False otherwise
+        :rtype: bool
+        """
+        return self.current_node == self.visited_nodes[0] if len(self.visited_nodes) > 0 else False
+    
+    def do_final_move_to_start(self) -> None:
+        # get possible next edges
+        possible_edges = self.__world.get_adjacent_edges(self.current_node)
+        # get the edge that leads to the starting node
+        for edge in possible_edges:
+            if edge.node_first == self.current_node and edge.node_second == self.visited_nodes[0] or edge.node_first == self.visited_nodes[0] and edge.node_second == self.current_node :
+                self.tour.append(edge)
+                self.tour_cost += edge.weight
+                self.current_node = self.visited_nodes[0]
+                return
+    
     def do_next_move_ACS(self, q0 : float, alpha : float, beta : float) -> None:
         """move the ant to the next node according to the ACS (ant colony system) algorithm
         
