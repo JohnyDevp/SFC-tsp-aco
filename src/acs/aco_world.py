@@ -47,25 +47,31 @@ class ACOWorld:
     # of non existing edge file, edges will be created between each node
     edges : list[Edge] = []
     
-    def __init__(self, path_nodes, path_edges=None, distance_function=acoh.euclidean_distance):
+    def __init__(self, path_nodes, path_edges=None, distance_function=acoh.euclidean_distance) -> None | Exception:
         """initialize the world with nodes and edges
         
         :param `str` path_nodes: path to the file with nodes
         :param `str` path_edges: path to the file with edges, if None, the edges will be created
         :param `function` distance_function: function for computing the distance between two nodes,
             used only if the edges are not provided
+            
+        :raises Exception: if the nodes or edges are not loaded correctly or the files have bad format
         """
         # setup distance function (even if none)
         self._distance_function = distance_function
         
         # load the nodes from file
-        self.__load_nodes(path_nodes)
+        try:
+            self.__load_nodes(path_nodes)
         
-        # load edges (or create them)
-        if (path_edges == None):
-            self.__create_edges()
-        else: 
-            self.__load_edges(path_edges)
+            # load edges (or create them)
+            if (path_edges == None):
+                self.__create_edges()
+            else: 
+                self.__load_edges(path_edges)
+            
+        except Exception as e:
+            raise e
         
     def get_random_node(self) -> Node:
         return np.random.choice(list(self.nodes.values()))
@@ -106,54 +112,72 @@ class ACOWorld:
         
         return complete
                 
-    def __load_nodes(self, path) -> None:
+    def __load_nodes(self, path) -> None | Exception:
         # read the file line by lines, skip comments (lines starting with #)
+        nodes_loaded = {}
         try:
             file = open(path, "r")
-            for line in file.readlines(): 
-                try:
-                    if (line[0] == "#"):
-                        continue
-                    # parse the node info from the line (there have to be four values separated by semicolon)
-                    node_id, node_name, node_x, node_y = line.split(";")
-                    # create the node and add it to the dictionary
-                    self.nodes[int(node_id)] = (Node(int(node_id), float(node_x), float(node_y), node_name))
-                except:
-                    print("Error: Bad node file format!", file=sys.stderr)
-                    exit(2)
-                    file.close()
-            file.close()
         except OSError:
-            print("Error: Edge file opening error!", file=sys.stderr)
-            exit(1)
-            
+            raise Exception("Node file opening error!")
+        
+        for line in file.readlines(): 
+            try:
+                if (line[0] == "#"):
+                    continue
+                # parse the node info from the line (there have to be four values separated by semicolon)
+                node_id, node_name, node_x, node_y = line.split(";")
+                # create the node and add it to the dictionary
+                nodes_loaded[int(node_id)] = (Node(int(node_id), float(node_x), float(node_y), node_name))
+            except:
+                file.close()
+                raise Exception("Error: Bad node file format!")
+        
+        file.close()
+        
+        # check for empty file
+        if (nodes_loaded.__len__() == 0):
+            raise Exception("No nodes loaded, empty file!")
+        
+        self.nodes = nodes_loaded
+        
         if (acos.VERBOSE):
             self.print_nodes()
     
-    def __load_edges(self, path, check_complete_graph=True) -> None:
+    def __load_edges(self, path, check_complete_graph=True) -> Exception | None:
         """load the edges from the file
         
         :param str path: path to the file with edges
         :param bool check_complete_graph: default True, if True, the function will check whether the graph is complete \
             and print warning if not
+        
+        :rtype: bool
+        :return: True if the graph is created successfully, false otherwise
         """
         
+        edges_loaded = []
         try:
             file = open(path, "r")
-            for line in file.readlines(): 
+        except OSError:
+            raise Exception("Error: Edge file opening error!")
+        
+        for line in file.readlines(): 
+            try:
                 if (line[0] == "#"):
                     continue
-                try:
-                    node_first_id, node_second_id, weight = line.split(";")
-                    self.edges.append(Edge(self.nodes[int(node_first_id)],self.nodes[int(node_second_id)], float(weight), .0))
-                except:
-                    print("Error: Bad edge file format!", file=sys.stderr)
-                    exit(2)
-            file.close()
-        except OSError:
-            print("Error: Edge file opening error!", file=sys.stderr)
-            exit(1)
-            
+                node_first_id, node_second_id, weight = line.split(";")
+                edges_loaded.append(Edge(self.nodes[int(node_first_id)],self.nodes[int(node_second_id)], float(weight), .0))
+            except:
+                file.close()
+                raise Exception("Error: Bad edge file format!")
+                    
+        file.close()
+        
+        self.edges = edges_loaded
+        
+        # check for empty file
+        if (edges_loaded.__len__() == 0):
+            raise Exception("No edges loaded, empty file!")
+        
         # print the edges, if verbose
         if (acos.VERBOSE):
             self.print_edges()

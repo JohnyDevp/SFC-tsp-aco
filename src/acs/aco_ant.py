@@ -61,8 +61,10 @@ class Ant:
         # get the edge that leads to the starting node
         for edge in possible_edges:
             if edge.node_first == self.current_node and edge.node_second == self.visited_nodes[0] or edge.node_first == self.visited_nodes[0] and edge.node_second == self.current_node :
+                self.visited_nodes.append(self.current_node)
                 self.tour.append(edge)
                 self.tour_cost += edge.weight
+                # change current node to the starting node
                 self.current_node = self.visited_nodes[0]
                 return
     

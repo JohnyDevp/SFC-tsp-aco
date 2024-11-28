@@ -3,7 +3,7 @@ from PyQt5.QtWidgets import (
     QMainWindow, QWidget, QVBoxLayout,
     QLineEdit, QPushButton, QHBoxLayout, 
     QFileDialog, QScrollArea,QGraphicsView, QGraphicsScene,
-    QTextEdit, QLabel, QSlider, QGraphicsTextItem, QGraphicsRectItem
+    QTextEdit, QLabel, QSlider, QGraphicsTextItem, QGraphicsRectItem, QMessageBox
 )
 from PyQt5.QtCore import Qt,QDir,QPointF, QLineF,QCoreApplication
 from PyQt5.QtGui import QPen, QColor,QFont
@@ -58,16 +58,16 @@ class MainWindow(QMainWindow):
             left_layout.addWidget(textbox)
             
         # add buttons to the left layout
-        button1 = QPushButton("Load node file", self)
-        button1.clicked.connect(self.__load_node_file_btn_handler)
-        button2 = QPushButton("Load edge file", self)
-        button2.clicked.connect(self.__load_edge_file_btn_handler)
-        self.load_node_file_btn = button1
-        self.load_edge_file_btn = button2
-        for b in [button1, button2]:
+        load_node_file_button = QPushButton("Load node file", self)
+        load_node_file_button.clicked.connect(self.__load_node_file_btn_handler)
+        load_edge_file_button = QPushButton("Load edge file", self)
+        load_edge_file_button.clicked.connect(self.__load_edge_file_btn_handler)
+        self.load_node_file_btn = load_node_file_button
+        self.load_edge_file_btn = load_edge_file_button
+        for b in [load_node_file_button, load_edge_file_button]:
             left_layout.addWidget(b)
             b.setFixedSize(100, 30)
-        # Slider setup
+        # slider setup
         self.comp_speed_label = QLabel("Computation delay: 0s", self)
         left_layout.addWidget(self.comp_speed_label)
         self.comp_speed_slider = QSlider(Qt.Horizontal, self)
@@ -75,7 +75,7 @@ class MainWindow(QMainWindow):
         self.comp_speed_slider.setMaximum(6)
         self.comp_speed_slider.setValue(0)
         self.comp_speed_slider.setTickPosition(QSlider.TicksBelow)
-        # Connect slider value change to the method
+        # connect slider value change to the method
         self.comp_speed_slider.valueChanged.connect(lambda value: self.comp_speed_label.setText(f"Computation delay: {(value/2.0):.1f}s"))
         self.comp_speed_slider.setTickInterval(1)
         left_layout.addWidget(self.comp_speed_slider)
@@ -334,9 +334,19 @@ class MainWindow(QMainWindow):
             self.load_node_file_btn.setStyleSheet("border: 2px solid red;")
             return
         else:
+            try: 
+                self.controller.createWorld()
+            except Exception as e:
+                msg = QMessageBox()
+                msg.setIcon(QMessageBox.Warning)
+                msg.setText(str(e))
+                msg.setWindowTitle("Warning")
+                msg.exec_()
+                return
+            
+            
             self.run_acs_btn.setEnabled(True)
             self.load_node_file_btn.setStyleSheet("")
-            self.controller.createWorld()
             # disable this button, because the world is already created
             self.create_world_btn.setEnabled(False)
     
@@ -349,6 +359,13 @@ class MainWindow(QMainWindow):
         self.load_edge_file_btn.setEnabled(True)
         self.create_world_btn.setEnabled(True)
         self.nodes_set=False
+        
+        for input in self.inputs:
+            input[1].setText("")
+            input[1].setStyleSheet("")
+        
+        self.load_node_file_btn.setStyleSheet("")
+        self.load_edge_file_btn.setStyleSheet("")
     
     def __obtain_params(self) -> dict:
         print("Obtain params")
@@ -430,7 +447,7 @@ class MainWindow(QMainWindow):
                 print("Error: Node file not set!", file=sys.stderr)
                 self.load_node_file_btn.setStyleSheet("border: 2px solid red;")
                 return
-            else :
+            else:
                 self.load_node_file_btn.setStyleSheet("")
             
             # obtain the parameters from the textboxes
@@ -447,4 +464,13 @@ class MainWindow(QMainWindow):
             # change button text
             self.run_acs_btn.setText("PAUSE ACS")
             
-            self.controller.startACO(params, self.comp_speed_slider.value())
+            try:
+                self.controller.startACO(params, self.comp_speed_slider.value())
+            except Exception as e:
+                msg = QMessageBox()
+                msg.setIcon(QMessageBox.Warning)
+                msg.setText(str(e))
+                msg.setWindowTitle("Warning")
+                msg.exec_()
+                self.__reset_acs_btn_handler()
+                return

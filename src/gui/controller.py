@@ -99,14 +99,19 @@ class AntGuiController:
         self.node_file_path = None
         self.view.reset_scene_context()
     
-    def createWorld(self) -> None:
+    def createWorld(self) -> None | Exception:
         """create the world with the given node and edge files
         it expects that the node file is set, and everything on gui is clear
         """
-        world = ACOWorld(self.node_file_path, self.edge_file_path)
+        try:
+            world = ACOWorld(self.node_file_path, self.edge_file_path)
+        except Exception as e:
+            self.view.log_message("Error: " + str(e), bold=True, warning=True)
+            raise e
+        
         if (not world.check_for_graph_completion()):
-            self.view.log_message("Graph is not complete. Using created edges with euclidean distance.", bold=True,warning=True)
-            world = ACOWorld(self.node_file_path, None)
+            self.view.log_message("Graph is not complete. Euclidean distance as edges between nodes can be used.", bold=True,warning=True)
+            raise Exception("Graph is not complete")
             
         self.world = world
         self.view.draw_nodes(world.nodes)
@@ -120,6 +125,7 @@ class AntGuiController:
             top_left_y = max(top_left_y, node.y)
             
         self.view.scroll_to_area(int(top_left_x), int(top_left_y))
+
         
     def startACO(self, params : list[str,float|str], comp_speed : float = 0) -> None:
         """start the ACO algorithm with the given parameters
@@ -154,14 +160,15 @@ class AntGuiController:
         self.view.log_message(f"Start Node ID: {_start_node_id}")
         
         # set up the world
-        world = ACOWorld(self.node_file_path, self.edge_file_path)
-        # check for completeness
-        if (not world.check_for_graph_completion()):
-            self.view.log_message("Graph is not complete. Using created edges with euclidean distance.", bold=True,warning=True)
-            world = ACOWorld(self.node_file_path, None)
-            
-        # set up the solver
-        solver = ACOSolver(
+        try:
+            world = ACOWorld(self.node_file_path, self.edge_file_path)
+            # check for completeness
+            if (not world.check_for_graph_completion()):
+                self.view.log_message("Graph is not complete. Using created edges with euclidean distance.", bold=True,warning=True)
+                world = ACOWorld(self.node_file_path, None)
+                
+            # set up the solver
+            solver = ACOSolver(
             _world=world,
             _gui_controller=self,
             _alpha=_alpha,
@@ -175,6 +182,11 @@ class AntGuiController:
             _start_node_id=_start_node_id,
         )
         
+        except Exception as e:
+            self.view.log_message("Error: " + str(e), bold=True, warning=True)
+            raise e
+            return
+    
         # draw the start node
         if _start_node_id != None:
             self.view.draw_start_node(world.nodes[_start_node_id])
