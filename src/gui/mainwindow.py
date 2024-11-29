@@ -11,6 +11,7 @@ from PyQt5.QtGui import QPen, QColor,QFont
 import gui.controller as ac
 
 from acs.aco_world import Node, Edge
+import acs.aco_settings as acos
 
 class MainWindow(QMainWindow):
     controller : ac.AntGuiController = None
@@ -139,6 +140,12 @@ class MainWindow(QMainWindow):
         self.reset_acs_btn = reset_acs_btn
         right_layout.addWidget(reset_acs_btn)
         
+        reboot_same_btn = QPushButton("REBOOT SAME", self)
+        reboot_same_btn.clicked.connect(self.__reboot_same_btn_handler)
+        reboot_same_btn.setEnabled(False)
+        self.reboot_same_btn = reboot_same_btn
+        right_layout.addWidget(reboot_same_btn)
+        
         right_layout.addStretch()
         
         # add buttons for zooming
@@ -161,7 +168,8 @@ class MainWindow(QMainWindow):
         main_widget.setLayout(mylayout)
     
     def draw_nodes(self, nodes : dict[int, Node], start_node=None) -> None:
-        print("Draw nodes")
+        if acos.VERBOSE:
+            print("Draw nodes",file=sys.stderr)
         
         # define a pen to draw the nodes with
         pen = QPen(QColor(0, 0, 0))  # black color
@@ -170,7 +178,8 @@ class MainWindow(QMainWindow):
         
         # draw the nodes
         for node in nodes.values():
-            print(node)
+            if acos.VERBOSE:
+                print("Drawing node",node,file=sys.stderr)
             item=self.scene.addEllipse(node.x - 5, node.y - 5, 10, 10, pen, pen.color())
             txt =self.scene.addText(str(node.id), QFont("Arial", 12, weight=1000))
             txt.setPos(node.x, node.y)
@@ -194,7 +203,8 @@ class MainWindow(QMainWindow):
         self.scene.update()
             
     def draw_edges(self, edges : list[Edge]):
-        print("Draw edges")
+        if acos.VERBOSE:
+            print("Draw edges",file=sys.stderr)
         
         # define a pen to draw the nodes with
         pen = QPen(Qt.black)  # Blue color
@@ -204,7 +214,8 @@ class MainWindow(QMainWindow):
         self.edge_ui = []
         # draw the edges
         for edge in edges:
-            print(edge)
+            if acos.VERBOSE:
+                print("Drawing edge",edge,file=sys.stderr)
             
             lineitem = self.scene.addLine(
                 QLineF(
@@ -225,7 +236,8 @@ class MainWindow(QMainWindow):
         self.iteration_count_label.setText(f"Iterace: {current_iteration}/{max_iterations}")
         
     def update_edges(self, edges : list[Edge], best_tour : list[Edge], min_pheromone, max_pheromone) -> None:
-        print("Update edges")
+        if acos.VERBOSE:
+            print("Update edges",file=sys.stderr)
         
         # define a pen to draw the nodes with
         pen = QPen(Qt.black)  # Blue color
@@ -236,7 +248,7 @@ class MainWindow(QMainWindow):
         for edge in self.edge_ui:
             self.scene.removeItem(edge)
             self.edge_ui.remove(edge)
-            
+
         # draw the new edges
         for edge in edges:
             pen.setColor(self.__get_color_from_value(edge.pheromone, min_pheromone, max_pheromone))
@@ -310,21 +322,38 @@ class MainWindow(QMainWindow):
         self.scroll_area.horizontalScrollBar().setValue(int(1000 + top_left_x))
         self.scroll_area.verticalScrollBar().setValue(int(1000 - top_left_y))
         
-        print(self.scroll_area.horizontalScrollBar().value(), self.scroll_area.verticalScrollBar().value())
-          
+        if acos.VERBOSE:
+            print("AutoScrolling to area ",self.scroll_area.horizontalScrollBar().value(), self.scroll_area.verticalScrollBar().value(),file=sys.stderr)
+
+    def __reboot_same_btn_handler(self):
+        if acos.VERBOSE:
+            print("Reboot same btn clicked",file=sys.stderr)
+        self.controller.rebootSame()
+        self.run_acs_btn.setEnabled(True)
+        
     def __load_node_file_btn_handler(self):
-        print("Load node file")
+        if acos.VERBOSE:
+            print("Load node file btn clicked",file=sys.stderr)
         file=QFileDialog.getOpenFileName(self, 'Open file', QDir.homePath(), "Input nodes file (*.in)")
-        self.nodes_set = True
-        self.controller.setNodeFilePath(file[0])
+        if (file[0] == ""):
+            return
+        else:
+            self.nodes_set = True
+            self.controller.setNodeFilePath(file[0])
         
     def __load_edge_file_btn_handler(self):
-        print("Load edge file")
+        if acos.VERBOSE:
+            print("Load edge file btn clicked",file=sys.stderr)
         file=QFileDialog.getOpenFileName(self, 'Open file', QDir.homePath(), "Input edges file (*.in)")
-        self.controller.setEdgeFilePath(file[0])
+        if (file[0] == ""):
+            return
+        else:
+            self.controller.setEdgeFilePath(file[0])
     
     def __create_world_btn_handler(self):
-        print("Create world")
+        if acos.VERBOSE:
+            print("Create world btn clicked",file=sys.stderr)
+            
         # reset the scene, because we are creating a new world
         self.reset_scene_context()
         
@@ -350,8 +379,7 @@ class MainWindow(QMainWindow):
             # disable this button, because the world is already created
             self.create_world_btn.setEnabled(False)
     
-    def __reset_acs_btn_handler(self):
-        self.controller.resetACO()
+    def resetUI(self):
         self.iteration_count_label.setText("Iterace: 0/0")
         self.run_acs_btn.setText("START ACS")
         self.run_acs_btn.setEnabled(False)
@@ -366,9 +394,13 @@ class MainWindow(QMainWindow):
         
         self.load_node_file_btn.setStyleSheet("")
         self.load_edge_file_btn.setStyleSheet("")
+        
+    def __reset_acs_btn_handler(self):
+        self.controller.resetACO()
     
     def __obtain_params(self) -> dict:
-        print("Obtain params")
+        if acos.VERBOSE:
+            print("Obtaining params...",file=sys.stderr)
         # obtain the parameters from the textboxes
         current_item = 0
         try:
@@ -397,7 +429,8 @@ class MainWindow(QMainWindow):
     
     def reset_scene_context(self):
         """resets scene, array with edges and zoom factor"""
-        print("Clear the scene")
+        if acos.VERBOSE:
+            print("Clearing scene",file=sys.stderr)
         self.scene.clear()
         self.scene.update()
         self.edge_ui = []
@@ -405,6 +438,7 @@ class MainWindow(QMainWindow):
     
     def set_computation_finised_gui(self, best_tour_edges : list[Edge], best_tour_nodes : list[Node]):
         self.run_acs_btn.setEnabled(False)  
+        self.reboot_same_btn.setEnabled(True)
         
         self.best_nodes_edges_gui = []
         # draw edges
@@ -434,12 +468,16 @@ class MainWindow(QMainWindow):
            
     def __start_acs_btn_handler(self):
         if (self.controller.ACO_STATE == ac.ACOComputationState.ACO_RUNNING):
-            print("Pause ACS")
+            if acos.VERBOSE:
+                print("Pausing ACS",file=sys.stderr)
             self.controller.pauseACO()
+            self.reboot_same_btn.setEnabled(True)
             self.run_acs_btn.setText("CONTINUE ACS")
         elif (self.controller.ACO_STATE == ac.ACOComputationState.ACO_PAUSED):
-            print("Continue ACS")
+            if acos.VERBOSE:
+                print("Do continue ACS",file=sys.stderr)
             self.controller.continueACO()
+            self.reboot_same_btn.setEnabled(False)
             self.run_acs_btn.setText("PAUSE ACS")
         elif (self.controller.ACO_STATE == ac.ACOComputationState.ACO_READY):
             # check whether node file is already set
@@ -455,12 +493,14 @@ class MainWindow(QMainWindow):
             if (params is None):
                 return
             
-            print("Start ACS")
+            if acos.VERBOSE:
+                print("Starting ACS",file=sys.stderr)
+                
             # disable buttons for loading files
             self.load_node_file_btn.setEnabled(False)
             self.load_edge_file_btn.setEnabled(False)
             self.create_world_btn.setEnabled(False)
-            
+            self.reboot_same_btn.setEnabled(False)
             # change button text
             self.run_acs_btn.setText("PAUSE ACS")
             
@@ -472,5 +512,5 @@ class MainWindow(QMainWindow):
                 msg.setText(str(e))
                 msg.setWindowTitle("Warning")
                 msg.exec_()
-                self.__reset_acs_btn_handler()
+                self.controller.resetACO()
                 return

@@ -6,6 +6,7 @@ import threading
 
 from PyQt5.QtWidgets import QApplication
 from PyQt5.QtCore import Qt, QTimer, QPointF
+import sys
 
 class ACOComputationState:
     ACO_READY = 0
@@ -20,23 +21,25 @@ class AntGuiController:
     def __init__(self):
         self.node_file_path=None
         self.edge_file_path=None
+        self.timer = None
         self.lock = threading.Lock()
     
     def setControllersView(self, view):
         self.view : mw.MainWindow = view
     
     def setNodeFilePath(self, path):
-        print(path)
+        print(path, file=sys.stderr)
         self.node_file_path=path
     
     def setEdgeFilePath(self, path):
-        print(path)
+        print(path, file=sys.stderr)
         self.edge_file_path=path
     
     def notify_from_aco_solver(self, type : acos.ACS2GUIMessage, **kwargs) -> None:
         match type:
             case acos.ACS2GUIMessage.GLOBAL_PHEROMONE_UPDATE_DONE:
-                print("Global pheromone update message received")
+                if acos.VERBOSE:
+                    print("Global pheromone update message received", file=sys.stderr)
                 # update the view with the new pheromone values
                 self.view.update_edges(
                     self.world.edges,
@@ -47,7 +50,8 @@ class AntGuiController:
                 QApplication.processEvents()
         
     def __handle_aco_gui(self, num_iterations : int, comp_speed : float) -> None:
-        print("ACS gui started")
+        if acos.VERBOSE:
+            print("ACS gui started",file=sys.stderr)
         
         # nodes and edges expected to be drawn already
 
@@ -77,10 +81,10 @@ class AntGuiController:
             else:
                 self.solver.solve_one_step()
                 self.view.update_iteration_count(self.current_step, num_iterations)
-            
+           
         # start solving
         self.timer = QTimer(self.view)
-        self.timer.timeout.connect(lambda: one_step_handler())
+        self.timer.timeout.connect(lambda: one_step_handler() if self.ACO_STATE == ACOComputationState.ACO_RUNNING else None)
         self.timer.start(comp_speed*1000)  # 1 second interval
     
     def pauseACO(self) -> None:
@@ -93,12 +97,30 @@ class AntGuiController:
     
     def resetACO(self) -> None:
         self.ACO_STATE = ACOComputationState.ACO_READY
+        if (self.timer != None):
+            self.timer.stop()
+            del self.timer
+            self.timer = None
         self.world = None
+        self.solver = None
         self.current_step = 0
         self.edge_file_path = None
         self.node_file_path = None
+        
         self.view.reset_scene_context()
+        self.view.resetUI()
     
+    def rebootSame(self):
+        store_path=self.edge_file_path
+        store_node=self.node_file_path
+            
+        self.resetACO()
+        
+        self.setEdgeFilePath(store_path)
+        self.setNodeFilePath(store_node)
+        self.view.nodes_set = True
+        self.createWorld()
+        
     def createWorld(self) -> None | Exception:
         """create the world with the given node and edge files
         it expects that the node file is set, and everything on gui is clear
@@ -112,7 +134,7 @@ class AntGuiController:
         if (not world.check_for_graph_completion()):
             self.view.log_message("Graph is not complete. Euclidean distance as edges between nodes can be used.", bold=True,warning=True)
             raise Exception("Graph is not complete")
-            
+        
         self.world = world
         self.view.draw_nodes(world.nodes)
         self.view.draw_edges(world.edges)
@@ -126,7 +148,6 @@ class AntGuiController:
             
         self.view.scroll_to_area(int(top_left_x), int(top_left_y))
 
-        
     def startACO(self, params : list[str,float|str], comp_speed : float = 0) -> None:
         """start the ACO algorithm with the given parameters
         
@@ -146,18 +167,20 @@ class AntGuiController:
         _q0 = params["_q0"] if params["_q0"]!=None else 0.9
         _alpha_decay = params["_alpha_decay"] if params["_alpha_decay"]!=None else 0.1
         _start_node_id = int(params["_start_node_id"]) if params["_start_node_id"]!=None else None
+        num_iterations = int(params["num_iterations"]) if params["num_iterations"]!=None else 10
         
         # logging parameters to window
         self.view.log_message("ACO Parameters:",bold=True)
         self.view.log_message(f"Alpha: {_alpha}")
         self.view.log_message(f"Beta: {_beta}")
         self.view.log_message(f"Rho: {_rho}")
-        self.view.log_message(f"N: {_n}")
         self.view.log_message(f"Tau0: {_tau0}")
         self.view.log_message(f"Q: {_Q}")
         self.view.log_message(f"q0: {_q0}")
         self.view.log_message(f"Alpha Decay: {_alpha_decay}")
         self.view.log_message(f"Start Node ID: {_start_node_id}")
+        self.view.log_message(f"Number of ants (N): {_n}")
+        self.view.log_message(f"Number of iterations: {num_iterations}")
         
         # set up the world
         try:
@@ -195,7 +218,6 @@ class AntGuiController:
         self.world = world
         self.current_step = 0
         self.ACO_STATE = True
-        num_iterations = int(params["num_iterations"]) if params["num_iterations"]!=None else 10
         self.__handle_aco_gui(num_iterations, comp_speed)
         
     

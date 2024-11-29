@@ -179,6 +179,12 @@ class ACOSolver:
                         
         min_pheromone, max_pheromone = self.__global_update_pheromones(sorted_ants[0])
 
+        # save the best tour so far
+        if sorted_ants[0].tour_cost < self.best_tour_cost:
+            self.best_tour_nodes = sorted_ants[0].visited_nodes
+            self.best_tour_edges = sorted_ants[0].tour
+            self.best_tour_cost = sorted_ants[0].tour_cost
+            
         # if gui active, notify about current progress
         if (self.GUIACTIVE):
             self.gui_controller.notify_from_aco_solver(
@@ -188,8 +194,3 @@ class ACOSolver:
                 max_pheromone=max_pheromone
             )
             
-        # save the best tour so far
-        if sorted_ants[0].tour_cost < self.best_tour_cost:
-            self.best_tour_nodes = sorted_ants[0].visited_nodes
-            self.best_tour_edges = sorted_ants[0].tour
-            self.best_tour_cost = sorted_ants[0].tour_cost

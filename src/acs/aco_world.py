@@ -60,6 +60,10 @@ class ACOWorld:
         # setup distance function (even if none)
         self._distance_function = distance_function
         
+        # reset the edges and nodes for the new world (if the class is used multiple times)
+        self.nodes = {}
+        self.edges = []
+        
         # load the nodes from file
         try:
             self.__load_nodes(path_nodes)
@@ -230,10 +234,10 @@ class ACOWorld:
     def print_edges(self) -> None:
         """print the edges in the world"""
         for edge in self.edges:
-            print(edge)
+            print(edge,file=sys.stderr)
             
     def print_nodes(self) -> None:
         """print the nodes in the world"""
         for node in self.nodes.values():
-            print(node)
+            print(node, file=sys.stderr)
       
