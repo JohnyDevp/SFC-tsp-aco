@@ -58,23 +58,24 @@ def main():
             path_nodes=args.node_file, 
             path_edges=args.edge_file
         )
+        
+        # initialize the solver
+        solver = aco_solver.ACOSolver(
+            _world=world, 
+            _alpha=args.alpha, 
+            _beta=args.beta, 
+            _rho=args.rho, 
+            _n=args.n, 
+            _tau0=args.tau0, 
+            _Q=args.Q, 
+            _q0=args.q0, 
+            _alpha_decay=args.alpha_decay, 
+            _start_node_id=args.start_node
+        )
     except Exception as e:
         print("Error: " + str(e), file=sys.stderr)
         exit(1)
 
-    # initialize the solver
-    solver = aco_solver.ACOSolver(
-        _world=world, 
-        _alpha=args.alpha, 
-        _beta=args.beta, 
-        _rho=args.rho, 
-        _n=args.n, 
-        _tau0=args.tau0, 
-        _Q=args.Q, 
-        _q0=args.q0, 
-        _alpha_decay=args.alpha_decay, 
-        _start_node_id=args.start_node
-    )
 
     # start solving acs
     solver.solve(args.iterations)

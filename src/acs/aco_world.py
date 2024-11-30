@@ -52,6 +52,7 @@ class ACOWorld:
         
         :param `str` path_nodes: path to the file with nodes
         :param `str` path_edges: path to the file with edges, if None, the edges will be created
+            currently only complete graph is supported (as TSP needs complete graph)
         :param `function` distance_function: function for computing the distance between two nodes,
             used only if the edges are not provided
             
@@ -73,6 +74,10 @@ class ACOWorld:
                 self.__create_edges()
             else: 
                 self.__load_edges(path_edges)
+            
+            # check for graph completeness
+            if (not self.check_for_graph_completion()):
+                raise Exception("Graph is not complete!")
             
         except Exception as e:
             raise e
@@ -121,15 +126,18 @@ class ACOWorld:
         nodes_loaded = {}
         try:
             file = open(path, "r")
-        except OSError:
-            raise Exception("Node file opening error!")
+        except OSError as e:
+            raise Exception(str(e))
         
         for line in file.readlines(): 
             try:
-                if (line[0] == "#"):
+                if (line[0] == "#" or line.strip() == ""):
                     continue
                 # parse the node info from the line (there have to be four values separated by semicolon)
                 node_id, node_name, node_x, node_y = line.split(";")
+                if (node_id in nodes_loaded):
+                    print("** WARNING: Duplicate node id! **",file=sys.stderr)
+                    
                 # create the node and add it to the dictionary
                 nodes_loaded[int(node_id)] = (Node(int(node_id), float(node_x), float(node_y), node_name))
             except:
@@ -166,14 +174,20 @@ class ACOWorld:
         
         for line in file.readlines(): 
             try:
-                if (line[0] == "#"):
+                if (line[0] == "#" or line.strip() == ""):
                     continue
                 node_first_id, node_second_id, weight = line.split(";")
+                if (node_first_id == node_second_id):
+                    raise Exception("Edge between the same node not supported!")
+                if (float(weight) < 0):
+                    raise Exception("Edge weight cannot be negative!")
+                if (int(node_first_id) not in self.nodes or int(node_second_id) not in self.nodes):
+                    raise Exception("Edge between non-existing nodes!")
                 edges_loaded.append(Edge(self.nodes[int(node_first_id)],self.nodes[int(node_second_id)], float(weight), .0))
-            except:
+            except Exception as e:
                 file.close()
-                raise Exception("Error: Bad edge file format!")
-                    
+                raise Exception(str(e))
+                   
         file.close()
         
         self.edges = edges_loaded
@@ -226,8 +240,7 @@ class ACOWorld:
                 edge.pheromone = float(tau0)
             float_tau0 = float(tau0)
         else:
-            print("Error: Bad initial phereomone value (tau0 parameter)!", file=sys.stderr)
-            exit(3)
+            raise Exception("Bad initial phereomone value! (tau0 parameter)")
 
         return float_tau0
     

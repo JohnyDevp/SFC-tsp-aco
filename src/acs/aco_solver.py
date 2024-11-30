@@ -18,24 +18,42 @@ class ACOSolver:
         :param `ACOWorld` world: initialized world with nodes and edges
         :param `float` alpha: alpha parameter, influence of pheromone on the edge
         :param `float` beta: beta parameter, influence of the weight of the edge
-        :param `float` rho: evaporation rate
+        :param `float` rho: evaporation rate 0<=rho<=1
         :param `int` n: number of ants
         :param `float` Q: coefficient used in global pheromone update
         :param `float` q0: exploitation probability, 0<=q0<=1
         :param `float` alpha_decay: pheromone decay for the global update pheromone (done only for the best ant), 0<alpha_decay<1 
         :param `str`|`float` tau0: initial pheromone value, if :type:`str`, then it can be only "greedy", according to which \
-            the pheromone will be set to 1/(greedy solution); \n
+            the pheromone will be set to 1/[n*(greedy solution)]; \n
             if :type:`float`, then the pheromone will be set to this value
         :param `int` start_node_id: id of the node where the ants will start, if None, no node will be set explicitly
         """
         self.world = _world
+        
+        if (_n < 1):
+            raise ValueError("Number of ants must be greater than 0.")
         self.n = _n
+        
         self.alpha = _alpha
         self.beta = _beta
+        
+        if (_rho > 1 or _rho < 0):
+            raise ValueError("rho must be in range [0,1].")
         self.rho = _rho
+        
         self.Q = _Q
+        
+        if (_q0 > 1 or _q0 < 0):
+            raise ValueError("q0 must be in range [0,1].")
         self.q0 = _q0
+        
+        if (_alpha_decay > 1 or _alpha_decay < 0):
+            raise ValueError("alpha_decay must be in range [0,1].")
         self.alpha_decay = _alpha_decay
+        
+        # check whether start node exists
+        if _start_node_id is not None and _start_node_id not in self.world.nodes:
+            raise ValueError(f"Node with id {_start_node_id} does not exist in the world.")
         self.start_node_id = _start_node_id
         
         self.gui_controller = _gui_controller
@@ -76,6 +94,7 @@ class ACOSolver:
         finished_ants = 0 # the number of ants that have finished their path-finding
         while finished_ants < len(self.ant_colony):
             for ant in self.ant_colony:
+                # if the ant has finished its path-finding, return him to its starting position
                 if not ant.can_move():
                     # if the ant cannot move anymore, check if it has returned to the starting position
                     if ant.ant_has_returned_to_start():
@@ -178,7 +197,7 @@ class ACOSolver:
             print('Best ant:', sorted_ants[0].tour_cost, file=sys.stderr)
                         
         min_pheromone, max_pheromone = self.__global_update_pheromones(sorted_ants[0])
-
+            
         # save the best tour so far
         if sorted_ants[0].tour_cost < self.best_tour_cost:
             self.best_tour_nodes = sorted_ants[0].visited_nodes
