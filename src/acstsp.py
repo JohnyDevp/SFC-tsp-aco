@@ -172,8 +172,6 @@ class MainWindow(QMainWindow):
         self.view = QGraphicsView(self)
         self.scene = QGraphicsScene(self)
         self.view.setScene(self.scene)
-        self.canvas_width, self.canvas_height = 2000, 2000  # Large virtual canvas size
-        self.view.setMinimumSize(self.canvas_width, self.canvas_height)
         self.view.setStyleSheet("background-color: white; border: 1px solid black;")
         
         # wrap the QLabel in a QScrollArea
