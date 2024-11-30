@@ -9,7 +9,7 @@ import acs.aco_settings as acos
 import sys
 import argparse
 
-from PyQt5.QtWidgets import QApplication, QMainWindow, QScrollArea, QGraphicsView, QGraphicsScene, QGraphicsRectItem
+from PyQt5.QtWidgets import QApplication, QMainWindow, QScrollArea, QGraphicsView, QGraphicsScene, QGraphicsRectItem, QVBoxLayout,QWidget,QPushButton
 from PyQt5.QtCore import Qt, QLineF, QPointF
 from PyQt5.QtGui import QPen, QColor, QFont
 
@@ -167,22 +167,42 @@ class MainWindow(QMainWindow):
     def initUI(self):
         self.setGeometry(100, 100, 800, 600)
         self.setWindowTitle("Solution Visualization")
-    
+
+        main_widget = QWidget(self)
+        self.setCentralWidget(main_widget)
+        
+        layout = QVBoxLayout()
+        
         # create GraphicsView and Scene
         self.view = QGraphicsView(self)
         self.scene = QGraphicsScene(self)
         self.view.setScene(self.scene)
         self.view.setStyleSheet("background-color: white; border: 1px solid black;")
+        layout.addWidget(self.view)
         
-        # wrap the QLabel in a QScrollArea
-        self.scroll_area = QScrollArea(self)
-        self.scroll_area.setWidget(self.view)
-        self.scroll_area.setWidgetResizable(True)  # Keep the canvas size fixed
-        self.scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
-        self.scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
+        # add buttons for zooming
+        btn_zoom_in = QPushButton("Zoom In", self)
+        btn_zoom_in.clicked.connect(self.__zoom_in)
+        btn_zoom_out = QPushButton("Zoom Out", self)
+        btn_zoom_out.clicked.connect(self.__zoom_out)
+        layout.addWidget(btn_zoom_in)
+        layout.addWidget(btn_zoom_out)
+        # zoom factor
+        self.zoom_factor = 1.0
         
-        self.setCentralWidget(self.scroll_area)
+        main_widget.setLayout(layout)
+        
         self.show()
     
+    def __zoom_in(self):
+        self.zoom_factor *= 1.25
+        self.view.resetTransform()
+        self.view.scale(self.zoom_factor, self.zoom_factor)
+    
+    def __zoom_out(self):
+        self.zoom_factor /= 1.25
+        self.view.resetTransform()
+        self.view.scale(self.zoom_factor, self.zoom_factor)
+        
 if __name__ == "__main__":
     main()
