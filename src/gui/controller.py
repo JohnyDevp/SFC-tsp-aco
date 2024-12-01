@@ -113,12 +113,12 @@ class AntGuiController:
     def rebootSame(self):
         store_path=self.edge_file_path
         store_node=self.node_file_path
-            
+        store_nodes_set=self.view.nodes_set
         self.resetACO()
         
         self.setEdgeFilePath(store_path)
         self.setNodeFilePath(store_node)
-        self.view.nodes_set = True
+        self.view.nodes_set = store_nodes_set
         self.createWorld()
         
     def createWorld(self) -> None | Exception:

@@ -53,7 +53,7 @@ class MainWindow(QMainWindow):
         self.inputs = []
         for i in range(10):  # add 8 textboxes for 8 params for ACO
             textbox = QLineEdit(self)
-            textbox.setFixedSize(100, 30)
+            textbox.setFixedSize(180, 30)
             textbox.setPlaceholderText(f"{self.textboxes_params[i][0]}")
             self.inputs.append((self.textboxes_params[i][2],textbox))
             left_layout.addWidget(textbox)
@@ -397,6 +397,7 @@ class MainWindow(QMainWindow):
         
     def __reset_acs_btn_handler(self):
         self.controller.resetACO()
+        self.reboot_same_btn.setEnabled(False)
     
     def __obtain_params(self) -> dict:
         if acos.VERBOSE:
