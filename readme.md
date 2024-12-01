@@ -19,5 +19,6 @@ Tento projekt se zaměřuje na implementaci řešení problému TSP (Travelling 
 -   install.sh - skript pro otestování funkčnosti knihovny _acs_ a skriptu _acstsp.py_ na dvou bězích algoritmu ACS
 -   readme.md
 
-## Reference
+## Zdroje
+
 [https://people.idsia.ch/~luca/acs-ec97.pdf](https://people.idsia.ch/~luca/acs-ec97.pdf)
